@@ -4,7 +4,7 @@ enableDestroy = require 'server-destroy'
 shmock        = require '@octoblu/shmock'
 Server        = require '../../src/server'
 
-describe 'Create Interval', ->
+describe 'Delete Interval', ->
   beforeEach (done) ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
@@ -28,7 +28,7 @@ describe 'Create Interval', ->
     @meshblu.destroy()
     @server.destroy()
 
-  describe 'On POST /intervals', ->
+  describe 'On DELETE /destroy', ->
     beforeEach (done) ->
       userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -37,10 +37,23 @@ describe 'Create Interval', ->
         .set 'Authorization', "Basic #{userAuth}"
         .reply 200, uuid: 'some-uuid', token: 'some-token'
 
-      @registerDevice = @meshblu
-        .post '/devices'
+      @getDevices = @meshblu
+        .get '/v2/devices'
         .set 'Authorization', "Basic #{userAuth}"
-        .reply 201, uuid: 'interval-uuid', token: 'interval-token'
+        .reply 201, [
+          {uuid: 'device-uuid-1', token: 'device-token-1'}
+          {uuid: 'device-uuid-2', token: 'device-token-2'}
+        ]
+
+      @deleteDevice1 = @meshblu
+        .delete '/devices/device-uuid-1'
+        .set 'Authorization', "Basic #{userAuth}"
+        .reply 201
+
+      @deleteDevice2 = @meshblu
+        .delete '/devices/device-uuid-2'
+        .set 'Authorization', "Basic #{userAuth}"
+        .reply 201
 
       options =
         uri: '/intervals'
@@ -50,7 +63,7 @@ describe 'Create Interval', ->
           password: 'some-token'
         json: true
 
-      request.post options, (error, @response, @body) =>
+      request.delete options, (error, @response, @body) =>
         done error
 
     it 'should return a 200', ->
@@ -59,8 +72,11 @@ describe 'Create Interval', ->
     it 'should auth handler', ->
       @authDevice.done()
 
-    it 'should register handler', ->
-      @registerDevice.done()
+    it 'should get devices', ->
+      @getDevices.done()
 
-    it 'should send back a uuid', ->
-      expect(@body.uuid).to.equal 'interval-uuid'
+    it 'should delete the first device', ->
+      @deleteDevice1.done()
+
+    it 'should delete the second device', ->
+      @deleteDevice2.done()
