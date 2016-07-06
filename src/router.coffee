@@ -7,5 +7,6 @@ class Router
     intervalController = new IntervalController {@intervalService}
 
     app.post '/intervals', intervalController.create
+    app.delete '/intervals', intervalController.destroy
 
 module.exports = Router

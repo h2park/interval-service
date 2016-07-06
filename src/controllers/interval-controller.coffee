@@ -6,4 +6,9 @@ class IntervalController
       return res.sendError(error) if error?
       res.send device
 
+  destroy: (req, res) =>
+    @intervalService.destroy req.meshbluAuth, (error) =>
+      return res.sendError(error) if error?
+      res.sendStatus 200
+
 module.exports = IntervalController
