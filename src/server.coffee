@@ -34,7 +34,7 @@ class Server
 
     app.options '*', cors()
 
-    intervalService = new IntervalService {@meshbluConfig}
+    intervalService = new IntervalService {@meshbluConfig, @mongodbUri}
     router = new Router {@meshbluConfig, intervalService}
 
     router.route app

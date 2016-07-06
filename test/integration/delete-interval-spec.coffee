@@ -1,4 +1,5 @@
 http          = require 'http'
+mongojs       = require 'mongojs'
 request       = require 'request'
 enableDestroy = require 'server-destroy'
 shmock        = require '@octoblu/shmock'
@@ -28,7 +29,18 @@ describe 'Delete Interval', ->
     @meshblu.destroy()
     @server.destroy()
 
-  describe 'On DELETE /destroy', ->
+  beforeEach (done) ->
+    @db = mongojs 'localhost', ['intervals']
+    @db.intervals.remove done
+    @datastore = @db.intervals
+
+  describe 'On DELETE /nodes/:nodeId/destroy/:id', ->
+    beforeEach (done) ->
+      data =
+        ownerId: 'some-uuid'
+        nodeId: 'node-uuid'
+      @datastore.insert data, done
+
     beforeEach (done) ->
       userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -37,31 +49,19 @@ describe 'Delete Interval', ->
         .set 'Authorization', "Basic #{userAuth}"
         .reply 200, uuid: 'some-uuid', token: 'some-token'
 
-      @getDevices = @meshblu
-        .get '/v2/devices'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 201, [
-          {uuid: 'device-uuid-1', token: 'device-token-1'}
-          {uuid: 'device-uuid-2', token: 'device-token-2'}
-        ]
-
-      @deleteDevice1 = @meshblu
-        .delete '/devices/device-uuid-1'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 201
-
-      @deleteDevice2 = @meshblu
-        .delete '/devices/device-uuid-2'
+      @deleteDevice = @meshblu
+        .delete '/devices/interval-uuid'
         .set 'Authorization', "Basic #{userAuth}"
         .reply 201
 
       options =
-        uri: '/intervals'
+        uri: '/nodes/node-uuid/intervals/interval-uuid'
         baseUrl: "http://localhost:#{@serverPort}"
         auth:
           username: 'some-uuid'
           password: 'some-token'
-        json: true
+        json:
+          nodeId: 'node-uuid'
 
       request.delete options, (error, @response, @body) =>
         done error
@@ -72,11 +72,11 @@ describe 'Delete Interval', ->
     it 'should auth handler', ->
       @authDevice.done()
 
-    it 'should get devices', ->
-      @getDevices.done()
+    it 'should delete the device', ->
+      @deleteDevice.done()
 
-    it 'should delete the first device', ->
-      @deleteDevice1.done()
-
-    it 'should delete the second device', ->
-      @deleteDevice2.done()
+    it 'should remove the mongodb entry', (done) ->
+      @datastore.findOne id: 'interval-uuid', (error, record) =>
+        return done error if error?
+        expect(record).not.to.exist
+        done()

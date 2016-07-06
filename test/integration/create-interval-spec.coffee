@@ -1,5 +1,6 @@
 http          = require 'http'
 request       = require 'request'
+mongojs       = require 'mongojs'
 enableDestroy = require 'server-destroy'
 shmock        = require '@octoblu/shmock'
 Server        = require '../../src/server'
@@ -24,11 +25,16 @@ describe 'Create Interval', ->
       @serverPort = @server.address().port
       done()
 
-  afterEach ->
+  afterEach (done) ->
     @meshblu.destroy()
-    @server.destroy()
+    @server.stop done
 
-  describe 'On POST /intervals', ->
+  beforeEach (done) ->
+    @db = mongojs 'localhost', ['intervals']
+    @db.intervals.remove done
+    @datastore = @db.intervals
+
+  describe 'On POST /nodes/:nodeId/intervals', ->
     beforeEach (done) ->
       userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -43,7 +49,7 @@ describe 'Create Interval', ->
         .reply 201, uuid: 'interval-uuid', token: 'interval-token'
 
       options =
-        uri: '/intervals'
+        uri: '/nodes/node-uuid/intervals'
         baseUrl: "http://localhost:#{@serverPort}"
         auth:
           username: 'some-uuid'
@@ -64,3 +70,9 @@ describe 'Create Interval', ->
 
     it 'should send back a uuid', ->
       expect(@body.uuid).to.equal 'interval-uuid'
+
+    it 'should create the record in mongo', (done) ->
+      @datastore.findOne ownerId: 'some-uuid', nodeId: 'node-uuid', (error, record) =>
+        return done error if error?
+        expect(record).to.exist
+        done()
