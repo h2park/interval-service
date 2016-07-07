@@ -3,8 +3,13 @@ request       = require 'request'
 enableDestroy = require 'server-destroy'
 shmock        = require '@octoblu/shmock'
 Server        = require '../../src/server'
+redis         = require 'redis'
 
 describe 'Pong Message', ->
+  before  (done) ->
+    @client = redis.createClient()
+    @client.on 'ready', done
+
   beforeEach (done) ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
@@ -23,6 +28,9 @@ describe 'Pong Message', ->
     @server.run =>
       @serverPort = @server.address().port
       done()
+
+  afterEach (done) ->
+    @client.flushall done
 
   afterEach ->
     @meshblu.destroy()
@@ -55,3 +63,23 @@ describe 'Pong Message', ->
 
     it 'should auth handler', ->
       @authDevice.done()
+
+    it 'should add one item in q:jobs', (done) ->
+      @client.zlexcount 'q:jobs', '-', '+', (error, length) =>
+        expect(length).to.equal 1
+        done error
+
+    it 'should add one item in q:pong:jobs', (done) ->
+      @client.llen 'q:pong:jobs', (error, length) =>
+        expect(length).to.equal 1
+        done error
+
+    it 'should have a job entry q:job:1', (done) ->
+      @client.exists 'q:job:1', (error, result) =>
+        expect(result).to.equal 1
+        done error
+
+    it 'should not have a job entry q:job:2', (done) ->
+      @client.exists 'q:job:2', (error, result) =>
+        expect(result).to.equal 0
+        done error
