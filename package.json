@@ -39,6 +39,7 @@
     "express-meshblu-auth": "^7.0.0",
     "express-meshblu-healthcheck": "^1.0.1",
     "express-send-error": "^v1.0.0",
+    "kue": "^0.11.1",
     "lodash": "^4.13.1",
     "meshblu-config": "^5.1.2",
     "meshblu-http": "^7.0.0",

@@ -8,7 +8,8 @@ SendError          = require 'express-send-error'
 MeshbluAuth        = require 'express-meshblu-auth'
 meshbluHealthcheck = require 'express-meshblu-healthcheck'
 Router             = require './router'
-IntervalService = require './services/interval-service'
+IntervalService    = require './services/interval-service'
+MessageService     = require './services/message-service'
 debug              = require('debug')('interval-service:server')
 
 class Server
@@ -35,7 +36,8 @@ class Server
     app.options '*', cors()
 
     intervalService = new IntervalService {@meshbluConfig, @mongodbUri}
-    router = new Router {@meshbluConfig, intervalService}
+    messageService = new MessageService {@meshbluConfig, @mongodbUri}
+    router = new Router {@meshbluConfig, intervalService, messageService}
 
     router.route app
 
