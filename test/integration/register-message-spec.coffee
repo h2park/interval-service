@@ -38,9 +38,9 @@ describe 'Register Message', ->
   afterEach (done) ->
     @client.flushall done
 
-  afterEach ->
+  afterEach (done) ->
     @meshblu.destroy()
-    @server.destroy()
+    @server.stop done
 
   context 'On POST /message', ->
     describe 'with topic of register-interval', ->
@@ -72,6 +72,7 @@ describe 'Register Message', ->
             payload:
               nodeId: 'some-interval-node'
               sendTo: 'some-flow-uuid'
+              nonce: 'this-is-nonce-ence'
 
         request.post options, (error, @response, @body) =>
           done error
@@ -112,6 +113,15 @@ describe 'Register Message', ->
           expect(token).to.equal 'interval-device-token'
           done error
 
+      it 'should save the job data to mongo', (done) ->
+        @datastore.findOne {ownerId: 'some-flow-uuid', nodeId: 'some-interval-node'}, (error, record) =>
+          return done error if error?
+          data =
+            nodeId: 'some-interval-node'
+            sendTo: 'some-flow-uuid'
+            nonce: 'this-is-nonce-ence'
+          expect(record.data).to.deep.equal data
+          done()
 
     describe 'with topic of register-cron', ->
       beforeEach (done) ->

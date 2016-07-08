@@ -37,10 +37,16 @@ class MessageService
   createRegisterJob: (data, callback) =>
     @storeCredentialsInRedis data, (error) =>
       return callback error if error?
-      job = @queue.create('register', data).
-        removeOnComplete(true).
-        save (error) =>
-          callback error, job
+      @storeJobInMongo data, (error) =>
+        job = @queue.create('register', data).
+          removeOnComplete(true).
+          save (error) =>
+            callback error, job
+
+  storeJobInMongo: (data, callback) =>
+    flowId = data.sendTo
+    nodeId = data.nodeId
+    @datastore.update {ownerId: flowId, nodeId: nodeId}, {$set: {data}}, callback
 
   storeCredentialsInRedis: (data, callback) =>
     flowId = data.sendTo
