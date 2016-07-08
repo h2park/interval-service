@@ -42,7 +42,7 @@ class Server
 
   startServer: (callback) =>
     intervalService = new IntervalService {@meshbluConfig, @mongodbUri}
-    messageService = new MessageService {@meshbluConfig, @mongodbUri, @redisClient}
+    messageService = new MessageService {@meshbluConfig, @mongodbUri, @redisClient, @redisPort, @redisHost}
     router = new Router {@meshbluConfig, intervalService, messageService}
 
     router.route @app

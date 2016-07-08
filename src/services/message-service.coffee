@@ -5,7 +5,7 @@ mongojs = require 'mongojs'
 
 class MessageService
   constructor: (dependencies={}) ->
-    {@mongodbUri, @redisClient} = dependencies
+    {@mongodbUri, @redisClient, @redisHost, @redisPort} = dependencies
     throw new error 'IntervalService requires: mongodbUri' unless @mongodbUri?
     throw new error 'IntervalService requires: redisClient' unless @redisClient?
 
@@ -15,8 +15,8 @@ class MessageService
     @kue = dependencies.kue ? require 'kue'
     @queue = @kue.createQueue
       redis:
-        port: @redisPort
         host: @redisHost
+        port: @redisPort
 
   pong: (params, callback) =>
     debug 'pong', JSON.stringify params

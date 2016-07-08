@@ -21,7 +21,7 @@ class MessageController
     @messageService.pong payload, (err) =>
       debug err if err
       debug 'done pong'
-      res.status(500).end() if res and err
+      res.status(500).send(err.message) if res and err
       res.status(201).end() if res
 
   register: (req, res) =>
