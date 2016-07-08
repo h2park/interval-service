@@ -5,9 +5,11 @@ Server        = require './src/server'
 class Command
   constructor: ->
     @serverOptions =
-      mongodbUri:     process.env.MONGODB_URI
-      meshbluConfig:  new MeshbluConfig().toJSON()
-      port:           process.env.PORT || 80
+      redisPort     : process.env.REDIS_PORT ? 6379
+      redisHost     : process.env.REDIS_HOST ? 'localhost'
+      mongodbUri    : process.env.MONGODB_URI
+      meshbluConfig : new MeshbluConfig().toJSON()
+      port          : process.env.PORT || 80
       disableLogging: process.env.DISABLE_LOGGING == "true"
 
   panic: (error) =>

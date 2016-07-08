@@ -1,5 +1,6 @@
 http          = require 'http'
 request       = require 'request'
+mongojs       = require 'mongojs'
 enableDestroy = require 'server-destroy'
 shmock        = require '@octoblu/shmock'
 Server        = require '../../src/server'
@@ -29,6 +30,11 @@ describe 'Register Message', ->
       @serverPort = @server.address().port
       done()
 
+  beforeEach (done) ->
+    @db = mongojs 'localhost', ['intervals']
+    @db.intervals.remove done
+    @datastore = @db.intervals
+
   afterEach (done) ->
     @client.flushall done
 
@@ -38,6 +44,14 @@ describe 'Register Message', ->
 
   context 'On POST /message', ->
     describe 'with topic of register-interval', ->
+      beforeEach (done) ->
+        data =
+          ownerId: 'some-flow-uuid'
+          nodeId: 'some-interval-node'
+          uuid: 'interval-device-uuid'
+          token: 'interval-device-token'
+
+        @datastore.insert data, done
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -87,6 +101,17 @@ describe 'Register Message', ->
         @client.exists 'q:job:2', (error, result) =>
           expect(result).to.equal 0
           done error
+
+      it 'should set interval/uuid/:flowId/:nodeId', (done) ->
+        @client.get 'interval/uuid/some-flow-uuid/some-interval-node', (error, uuid) =>
+          expect(uuid).to.equal 'interval-device-uuid'
+          done error
+
+      it 'should set interval/token/:flowId/:nodeId', (done) ->
+        @client.get 'interval/token/some-flow-uuid/some-interval-node', (error, token) =>
+          expect(token).to.equal 'interval-device-token'
+          done error
+
 
     describe 'with topic of register-cron', ->
       beforeEach (done) ->

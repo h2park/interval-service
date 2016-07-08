@@ -11,37 +11,43 @@ Router             = require './router'
 IntervalService    = require './services/interval-service'
 MessageService     = require './services/message-service'
 debug              = require('debug')('interval-service:server')
+redis              = require 'ioredis'
 
 class Server
-  constructor: ({@disableLogging, @port, @meshbluConfig, @mongodbUri})->
+  constructor: ({@disableLogging, @port, @meshbluConfig, @mongodbUri, @redisPort, @redisHost})->
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
 
   address: =>
     @server.address()
 
   run: (callback) =>
-    app = express()
-    app.use SendError()
-    app.use meshbluHealthcheck()
-    app.use morgan 'dev', immediate: false unless @disableLogging
-    app.use cors()
-    app.use errorHandler()
-    app.use bodyParser.urlencoded limit: '1mb', extended : true
-    app.use bodyParser.json limit : '1mb'
+    @app = express()
+    @app.use SendError()
+    @app.use meshbluHealthcheck()
+    @app.use morgan 'dev', immediate: false unless @disableLogging
+    @app.use cors()
+    @app.use errorHandler()
+    @app.use bodyParser.urlencoded limit: '1mb', extended : true
+    @app.use bodyParser.json limit : '1mb'
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
-    app.use meshbluAuth.auth()
-    app.use meshbluAuth.gateway()
+    @app.use meshbluAuth.auth()
+    @app.use meshbluAuth.gateway()
 
-    app.options '*', cors()
+    @app.options '*', cors()
 
+    @redisClient = new redis {@redisPort, @redisHost}
+    @redisClient.on 'ready', =>
+      @startServer callback
+
+  startServer: (callback) =>
     intervalService = new IntervalService {@meshbluConfig, @mongodbUri}
-    messageService = new MessageService {@meshbluConfig, @mongodbUri}
+    messageService = new MessageService {@meshbluConfig, @mongodbUri, @redisClient}
     router = new Router {@meshbluConfig, intervalService, messageService}
 
-    router.route app
+    router.route @app
 
-    @server = app.listen @port, callback
+    @server = @app.listen @port, callback
     enableDestroy @server
 
   stop: (callback) =>

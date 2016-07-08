@@ -1,6 +1,7 @@
 ## Roadmap
 
 - [x] save to mongo
-- [ ] port old interval service
-- [ ] grab credentials from mongo on start
+- [x] port old interval service
+- [x] grab credentials from mongo on start
 - [ ] save job metadata to mongo on start
+- [ ] validate cron string

@@ -1,16 +1,22 @@
 _ = require 'lodash'
 async = require 'async'
 debug = require('debug')('interval-service:message-service')
+mongojs = require 'mongojs'
 
 class MessageService
   constructor: (dependencies={}) ->
-    @REDIS_PORT = process.env.REDIS_PORT ? 6379
-    @REDIS_HOST = process.env.REDIS_HOST ? 'localhost'
+    {@mongodbUri, @redisClient} = dependencies
+    throw new error 'IntervalService requires: mongodbUri' unless @mongodbUri?
+    throw new error 'IntervalService requires: redisClient' unless @redisClient?
+
+    @db = mongojs @mongodbUri, ['intervals']
+    @datastore = @db.intervals
+
     @kue = dependencies.kue ? require 'kue'
     @queue = @kue.createQueue
       redis:
-        port: @REDIS_PORT
-        host: @REDIS_HOST
+        port: @redisPort
+        host: @redisHost
 
   pong: (params, callback) =>
     debug 'pong', JSON.stringify params
@@ -28,11 +34,27 @@ class MessageService
     return callback new Error 'nodeId or sendTo not defined' unless params?.sendTo? && params?.nodeId?
     @createUnregisterJob params, callback
 
-  createRegisterJob: (data, callback)=>
-    job = @queue.create('register', data).
-      removeOnComplete(true).
-      save (error) =>
-        callback error, job
+  createRegisterJob: (data, callback) =>
+    @storeCredentialsInRedis data, (error) =>
+      return callback error if error?
+      job = @queue.create('register', data).
+        removeOnComplete(true).
+        save (error) =>
+          callback error, job
+
+  storeCredentialsInRedis: (data, callback) =>
+    flowId = data.sendTo
+    nodeId = data.nodeId
+    @datastore.findOne {ownerId: flowId, nodeId: nodeId}, (error, credentials) =>
+      return callback error if error?
+      return callback() unless credentials?
+      redisData = [
+        "interval/uuid/#{flowId}/#{nodeId}"
+        credentials.uuid
+        "interval/token/#{flowId}/#{nodeId}"
+        credentials.token
+      ]
+      @redisClient.mset redisData, callback
 
   createPongJob: (data, callback)=>
     job = @queue.create('pong', data).
