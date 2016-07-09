@@ -4,7 +4,7 @@ mongojs = require 'mongojs'
 MeshbluHttp = require 'meshblu-http'
 
 class IntervalService
-  constructor: ({@meshbluConfig, @mongodbUri}) ->
+  constructor: ({@meshbluConfig, @mongodbUri, @intervalServiceUri}) ->
     throw new error 'IntervalService requires: meshbluConfig' unless @meshbluConfig?
     throw new error 'IntervalService requires: mongodbUri' unless @mongodbUri?
     @db = mongojs @mongodbUri, ['intervals']
@@ -17,6 +17,14 @@ class IntervalService
       discoverWhitelist: [uuid]
       owner: uuid
       createdBy: 'interval-service'
+      meshblu:
+        forwarders:
+          message:
+            received:
+              url: @intervalServiceUri
+              type: 'webhook'
+              method: 'POST'
+              signRequest: true
 
     meshbluHttp.register options, (error, device) =>
       return callback error if error?

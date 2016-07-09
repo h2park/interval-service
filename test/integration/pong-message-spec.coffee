@@ -22,6 +22,8 @@ describe 'Pong Message', ->
         port: 0xd00d
         protocol: 'http'
       mongodbUri: 'localhost'
+      redisUri: 'redis://localhost'
+      intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions
 

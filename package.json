@@ -1,6 +1,6 @@
 {
   "name": "interval-service",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Put some description here",
   "keywords": [],
   "homepage": "https://github.com/octoblu/interval",
@@ -48,5 +48,8 @@
     "morgan": "^1.6.1",
     "server-destroy": "^1.0.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "optionalDependencies": {
+    "hiredis": "^0.5.0"
+  }
 }

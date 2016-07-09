@@ -1,12 +1,14 @@
-_ = require 'lodash'
-async = require 'async'
-debug = require('debug')('interval-service:message-service')
+_       = require 'lodash'
+async   = require 'async'
+debug   = require('debug')('interval-service:message-service')
 mongojs = require 'mongojs'
+Redis   = require 'ioredis'
 
 class MessageService
   constructor: (dependencies={}) ->
-    {@mongodbUri, @redisClient, @redisHost, @redisPort} = dependencies
+    {@mongodbUri, @redisClient, @redisUri} = dependencies
     throw new error 'IntervalService requires: mongodbUri' unless @mongodbUri?
+    throw new error 'IntervalService requires: redisUri' unless @redisUri?
     throw new error 'IntervalService requires: redisClient' unless @redisClient?
 
     @db = mongojs @mongodbUri, ['intervals']
@@ -15,8 +17,8 @@ class MessageService
     @kue = dependencies.kue ? require 'kue'
     @queue = @kue.createQueue
       redis:
-        host: @redisHost
-        port: @redisPort
+        createClientFactory: =>
+          new Redis @redisUri, dropBufferSupport: true
 
   pong: (params, callback) =>
     debug 'pong', JSON.stringify params

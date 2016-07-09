@@ -11,11 +11,22 @@ Router             = require './router'
 IntervalService    = require './services/interval-service'
 MessageService     = require './services/message-service'
 debug              = require('debug')('interval-service:server')
-redis              = require 'ioredis'
+Redis              = require 'ioredis'
 
 class Server
-  constructor: ({@disableLogging, @port, @meshbluConfig, @mongodbUri, @redisPort, @redisHost})->
+  constructor: (options={})->
+    {
+      @disableLogging
+      @port
+      @meshbluConfig
+      @mongodbUri
+      @redisUri
+      @intervalServiceUri
+    } = options
+    throw new Error 'Server requires: meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
+    throw new Error 'Server requires: redisUri' unless @redisUri?
+    throw new Error 'Server requires: intervalServiceUri' unless @intervalServiceUri?
 
   address: =>
     @server.address()
@@ -36,13 +47,13 @@ class Server
 
     @app.options '*', cors()
 
-    @redisClient = new redis {@redisPort, @redisHost}
+    @redisClient = new Redis @redisUri, dropBufferSupport: true
     @redisClient.on 'ready', =>
       @startServer callback
 
   startServer: (callback) =>
-    intervalService = new IntervalService {@meshbluConfig, @mongodbUri}
-    messageService = new MessageService {@meshbluConfig, @mongodbUri, @redisClient, @redisPort, @redisHost}
+    intervalService = new IntervalService {@meshbluConfig, @mongodbUri, @intervalServiceUri}
+    messageService = new MessageService {@meshbluConfig, @mongodbUri, @redisClient, @redisUri}
     router = new Router {@meshbluConfig, intervalService, messageService}
 
     router.route @app
