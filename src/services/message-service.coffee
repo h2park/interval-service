@@ -15,10 +15,7 @@ class MessageService
     @datastore = @db.intervals
 
     @kue = dependencies.kue ? require 'kue'
-    @queue = @kue.createQueue
-      redis:
-        createClientFactory: =>
-          new Redis @redisUri, dropBufferSupport: true
+    @queue = @kue.createQueue redis: @redisUri
 
   pong: (params, callback) =>
     debug 'pong', JSON.stringify params

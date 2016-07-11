@@ -40,7 +40,7 @@
     "express-meshblu-healthcheck": "^1.0.1",
     "express-send-error": "^1.0.0",
     "ioredis": "^2.2.0",
-    "kue": "^0.11.1",
+    "kue": "^0.9.6",
     "lodash": "^4.13.1",
     "meshblu-config": "^5.1.2",
     "meshblu-http": "^7.0.0",
