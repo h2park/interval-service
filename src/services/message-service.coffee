@@ -45,7 +45,10 @@ class MessageService
   storeJobInMongo: (data, callback) =>
     flowId = data.sendTo
     nodeId = data.nodeId
-    @datastore.update {ownerId: flowId, nodeId: nodeId}, {$set: {data}}, callback
+    @datastore.findOne {ownerId: flowId, nodeId: nodeId}, (error, record) =>
+      return callback error if error?
+      return callback() unless record?
+      @datastore.update {ownerId: flowId, nodeId: nodeId}, {$set: {data}}, callback
 
   storeCredentialsInRedis: (data, callback) =>
     flowId = data.sendTo
