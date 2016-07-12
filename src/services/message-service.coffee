@@ -15,7 +15,9 @@ class MessageService
     @datastore = @db.intervals
 
     @kue = dependencies.kue ? require 'kue'
-    @queue = @kue.createQueue redis: @redisUri
+    @queue = @kue.createQueue
+      createClientFactory: =>
+        new Redis @redisUri, dropBufferSupport: true
 
   pong: (params, callback) =>
     debug 'pong', JSON.stringify params
@@ -43,12 +45,9 @@ class MessageService
             callback error, job
 
   storeJobInMongo: (data, callback) =>
-    flowId = data.sendTo
+    ownerId = data.sendTo
     nodeId = data.nodeId
-    @datastore.findOne {ownerId: flowId, nodeId: nodeId}, (error, record) =>
-      return callback error if error?
-      return callback() unless record?
-      @datastore.update {ownerId: flowId, nodeId: nodeId}, {$set: {data}}, callback
+    @datastore.update {ownerId, nodeId}, {ownerId, nodeId, data}, upsert: true, callback
 
   storeCredentialsInRedis: (data, callback) =>
     flowId = data.sendTo
