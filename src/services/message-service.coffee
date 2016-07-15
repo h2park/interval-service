@@ -40,6 +40,8 @@ class MessageService
     @storeCredentialsInRedis data, (error) =>
       return callback error if error?
       @storeJobInMongo data, (error) =>
+        return callback error if error?
+
         job = @queue.create('register', data).
           removeOnComplete(true).
           save (error) =>
@@ -58,7 +60,7 @@ class MessageService
       return callback() unless credentials?
       redisData = [
         "interval/uuid/#{flowId}/#{nodeId}"
-        credentials.uuid
+        credentials.id
         "interval/token/#{flowId}/#{nodeId}"
         credentials.token
       ]

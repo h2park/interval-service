@@ -4,8 +4,21 @@ debug = require('debug')('interval-service:message-controller')
 class MessageController
   constructor: ({@messageService}) ->
 
+  _getFromUuidFromRoute: (route) =>
+    hop = _.first route
+    return hop.from if hop?
+
+  _parseIfPossible: (str) =>
+    return unless str
+    try
+      JSON.parse str
+
   message: (req, res) =>
     debug 'message request body', JSON.stringify req?.body
+
+    route = @_parseIfPossible req.header 'X-MESHBLU-ROUTE'
+    req?.body.fromUuid ?= @_getFromUuidFromRoute route
+
     switch req?.body?.topic
       when 'register-interval'   then @register req, res
       when 'register-cron'       then @register req, res

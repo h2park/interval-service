@@ -12,6 +12,9 @@ IntervalService    = require './services/interval-service'
 MessageService     = require './services/message-service'
 debug              = require('debug')('interval-service:server')
 Redis              = require 'ioredis'
+httpSignature      = require '@octoblu/connect-http-signature'
+publicKey          = require '../public-key.json'
+expressVersion     = require 'express-package-version'
 
 class Server
   constructor: (options={})->
@@ -35,6 +38,7 @@ class Server
     @app = express()
     @app.use SendError()
     @app.use meshbluHealthcheck()
+    @app.use expressVersion({format: '{"version": "%s"}'})
     @app.use morgan 'dev', immediate: false unless @disableLogging
     @app.use cors()
     @app.use errorHandler()
@@ -42,8 +46,12 @@ class Server
     @app.use bodyParser.json limit : '1mb'
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
+    @app.use httpSignature.verify pub: publicKey.publicKey
     @app.use meshbluAuth.auth()
-    @app.use meshbluAuth.gateway()
+
+    @app.use (req, res, next) =>
+      return httpSignature.gateway()(req, res, next) if req.signature?.verified == true
+      meshbluAuth.gateway()(req, res, next)
 
     @app.options '*', cors()
 

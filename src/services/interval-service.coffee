@@ -13,30 +13,48 @@ class IntervalService
   create: ({uuid, token, nodeId}, callback) =>
     meshbluHttp = new MeshbluHttp _.extend {uuid, token}, @meshbluConfig
     options =
-      configureWhitelist: [uuid]
-      discoverWhitelist: [uuid]
       owner: uuid
       createdBy: 'interval-service'
       meshblu:
+        version: '2.0.0'
+        whitelists:
+          configure:
+            update: [{uuid}]
+          discover:
+            view: [{uuid}]
+          message:
+            from: [{uuid}]
         forwarders:
           message:
-            received:
-              url: @intervalServiceUri
-              type: 'webhook'
-              method: 'POST'
-              signRequest: true
+            received: [
+              {
+                url: "#{@intervalServiceUri}/message"
+                type: 'webhook'
+                method: 'POST'
+                signRequest: true
+              }
+            ]
 
     meshbluHttp.register options, (error, device) =>
       return callback error if error?
-      data =
-        id: device.uuid
-        ownerId: uuid
-        nodeId: nodeId
-        token: device.token
 
-      @datastore.insert data, (error) =>
+      options =
+        emitterUuid: device.uuid
+        subscriberUuid: device.uuid
+        type: 'message.received'
+
+      deviceMeshbluHttp = new MeshbluHttp _.defaults {uuid: device.uuid, token: device.token}, @meshbluConfig
+      deviceMeshbluHttp.createSubscription options, (error) =>
         return callback error if error?
-        callback null, device
+        data =
+          id: device.uuid
+          ownerId: uuid
+          nodeId: nodeId
+          token: device.token
+
+        @datastore.insert data, (error) =>
+          return callback error if error?
+          callback null, device
 
   destroy: ({uuid, token, nodeId, id}, callback) =>
     meshbluHttp = new MeshbluHttp _.extend {uuid, token}, @meshbluConfig
