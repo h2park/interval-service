@@ -1,4 +1,5 @@
 _             = require 'lodash'
+raven         = require 'raven'
 MeshbluConfig = require 'meshblu-config'
 Server        = require './src/server'
 
@@ -15,6 +16,12 @@ class Command
   panic: (error) =>
     console.error error.stack
     process.exit 1
+
+  catchErrors: =>
+    sentryDsn = process.env.SENTRY_DSN
+    return unless sentryDsn
+    client = new raven.Client(sentryDsn)
+    client.patchGlobal()
 
   run: =>
     @panic new Error('Missing required environment variable: MONGODB_URI') if _.isEmpty @serverOptions.mongodbUri
@@ -34,4 +41,5 @@ class Command
       process.exit 0
 
 command = new Command()
+command.catchErrors()
 command.run()
