@@ -5,20 +5,23 @@ mongojs = require 'mongojs'
 Redis   = require 'ioredis'
 
 queue = kue.createQueue
-  createClientFactory: =>
-    new Redis process.env.REDIS_URI, dropBufferSupport: true
+  redis:
+    createClientFactory: =>
+      new Redis process.env.REDIS_URI, dropBufferSupport: true
 
 client = new Redis process.env.REDIS_URI, dropBufferSupport: true
-database = mongojs process.env.MONGODB_URI, ['intervals']
-datastore = database.intervals
+client.on 'ready', =>
+  client.flushall =>
+    database = mongojs process.env.MONGODB_URI, ['intervals']
+    datastore = database.intervals
 
-register = (record, callback) =>
-  queue.create('register', record.data).
-    removeOnComplete(true).
-    save (error) =>
-      callback error, job
+    register = (record, callback) =>
+      queue.create('register', record.data).
+        removeOnComplete(true).
+        save (error) =>
+          callback error
 
-datastore.intervals.find {}, (error, records) =>
-  async.eachSeries records, register, (error) =>
-    console.log {error}
-    process.exit 0
+    datastore.find {}, (error, records) =>
+      async.eachSeries records, register, (error) =>
+        console.log {error}
+        process.exit 0
