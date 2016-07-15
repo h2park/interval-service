@@ -72,22 +72,22 @@ describe 'Unregister Message', ->
 
 
       it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount 'q:jobs', '-', '+', (error, length) =>
+        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
           expect(length).to.equal 1
           done error
 
       it 'should add one item in q:unregister:jobs', (done) ->
-        @client.llen 'q:unregister:jobs', (error, length) =>
+        @client.llen '{q}:unregister:jobs', (error, length) =>
           expect(length).to.equal 1
           done error
 
       it 'should have a job entry q:job:1', (done) ->
-        @client.exists 'q:job:1', (error, result) =>
+        @client.exists '{q}:job:1', (error, result) =>
           expect(result).to.equal 1
           done error
 
       it 'should not have a job entry q:job:2', (done) ->
-        @client.exists 'q:job:2', (error, result) =>
+        @client.exists '{q}:job:2', (error, result) =>
           expect(result).to.equal 0
           done error
 
@@ -124,21 +124,21 @@ describe 'Unregister Message', ->
 
 
       it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount 'q:jobs', '-', '+', (error, length) =>
+        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
           expect(length).to.equal 1
           done error
 
       it 'should add one item in q:unregister:jobs', (done) ->
-        @client.llen 'q:unregister:jobs', (error, length) =>
+        @client.llen '{q}:unregister:jobs', (error, length) =>
           expect(length).to.equal 1
           done error
 
       it 'should have a job entry q:job:1', (done) ->
-        @client.exists 'q:job:1', (error, result) =>
+        @client.exists '{q}:job:1', (error, result) =>
           expect(result).to.equal 1
           done error
 
       it 'should not have a job entry q:job:2', (done) ->
-        @client.exists 'q:job:2', (error, result) =>
+        @client.exists '{q}:job:2', (error, result) =>
           expect(result).to.equal 0
           done error
