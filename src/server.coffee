@@ -3,8 +3,8 @@ morgan             = require 'morgan'
 express            = require 'express'
 bodyParser         = require 'body-parser'
 errorHandler       = require 'errorhandler'
+OctobluRaven       = require 'octoblu-raven'
 enableDestroy      = require 'server-destroy'
-SendError          = require 'express-send-error'
 MeshbluAuth        = require 'express-meshblu-auth'
 meshbluHealthcheck = require 'express-meshblu-healthcheck'
 Router             = require './router'
@@ -25,18 +25,24 @@ class Server
       @mongodbUri
       @redisUri
       @intervalServiceUri
+      @octobluRaven
     } = options
     throw new Error 'Server requires: meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
     throw new Error 'Server requires: redisUri' unless @redisUri?
     throw new Error 'Server requires: intervalServiceUri' unless @intervalServiceUri?
+    @octobluRaven ?= new OctobluRaven()
 
   address: =>
     @server.address()
 
   run: (callback) =>
     @app = express()
-    @app.use SendError()
+    ravenExpress = @octobluRaven.express()
+    @app.use ravenExpress.requestHandler()
+    @app.use ravenExpress.errorHandler()
+    @app.use ravenExpress.sendError()
+
     @app.use meshbluHealthcheck()
     @app.use expressVersion({format: '{"version": "%s"}'})
     @app.use morgan 'dev', immediate: false unless @disableLogging

@@ -1,5 +1,5 @@
 _             = require 'lodash'
-raven         = require 'raven'
+OctobluRaven  = require 'octoblu-raven'
 MeshbluConfig = require 'meshblu-config'
 Server        = require './src/server'
 
@@ -12,16 +12,15 @@ class Command
       port:               process.env.PORT || 80
       disableLogging:     process.env.DISABLE_LOGGING == "true"
       intervalServiceUri: process.env.INTERVAL_SERVICE_URI
+      octobluRaven:       new OctobluRaven()
 
   panic: (error) =>
     console.error error.stack
     process.exit 1
 
   catchErrors: =>
-    sentryDsn = process.env.SENTRY_DSN
-    return unless sentryDsn
-    client = new raven.Client(sentryDsn)
-    client.patchGlobal()
+    ravenWorker = @serverOptions.octobluRaven.worker()
+    ravenWorker.handleErrors()
 
   run: =>
     @panic new Error('Missing required environment variable: MONGODB_URI') if _.isEmpty @serverOptions.mongodbUri
@@ -37,7 +36,7 @@ class Command
 
     process.on 'SIGTERM', =>
       console.log 'SIGTERM caught, exiting'
-      server.destroy()
+      server.stop()
       process.exit 0
 
 command = new Command()
