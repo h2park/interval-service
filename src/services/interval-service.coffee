@@ -57,7 +57,8 @@ class IntervalService
           callback null, device
 
   destroy: ({uuid, token, nodeId, id}, callback) =>
-    meshbluHttp = new MeshbluHttp _.extend {uuid, token}, @meshbluConfig
+    config = _.defaults {uuid, token}, @meshbluConfig
+    meshbluHttp = new MeshbluHttp config
     options =
       owner: uuid
       createdBy: 'interval-service'
