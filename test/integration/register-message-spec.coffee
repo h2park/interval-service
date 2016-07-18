@@ -50,10 +50,11 @@ describe 'Register Message', ->
         data =
           ownerId: 'some-flow-uuid'
           nodeId: 'some-interval-node'
-          uuid: 'interval-device-uuid'
+          id: 'interval-device-uuid'
           token: 'interval-device-token'
 
         @datastore.insert data, done
+
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 

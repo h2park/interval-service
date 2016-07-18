@@ -39,6 +39,7 @@ describe 'Create Interval', ->
   describe 'On POST /nodes/:nodeId/intervals', ->
     beforeEach (done) ->
       userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+      intervalAuth = new Buffer('interval-uuid:interval-token').toString 'base64'
 
       @authDevice = @meshblu
         .post '/authenticate'
@@ -49,6 +50,11 @@ describe 'Create Interval', ->
         .post '/devices'
         .set 'Authorization', "Basic #{userAuth}"
         .reply 201, uuid: 'interval-uuid', token: 'interval-token'
+
+      @subscribeDevice = @meshblu
+        .post '/v2/devices/interval-uuid/subscriptions/interval-uuid/message.received'
+        .set 'Authorization', "Basic #{intervalAuth}"
+        .reply 204
 
       options =
         uri: '/nodes/node-uuid/intervals'
@@ -69,6 +75,9 @@ describe 'Create Interval', ->
 
     it 'should register handler', ->
       @registerDevice.done()
+
+    it 'should subscribe handler', ->
+      @subscribeDevice.done()
 
     it 'should send back a uuid', ->
       expect(@body.uuid).to.equal 'interval-uuid'
