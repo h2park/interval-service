@@ -4,3 +4,5 @@ node_js:
 services:
   - redis
   - mongodb
+before_script:
+  - curl --silent --output public-key.json https://meshblu.octoblu.com/public-key
