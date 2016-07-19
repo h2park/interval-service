@@ -16,6 +16,7 @@ class MessageService
 
     @kue = dependencies.kue ? require 'kue'
     @queue = @kue.createQueue
+      jobEvents: false
       redis:
         createClientFactory: =>
           new Redis @redisUri, dropBufferSupport: true
