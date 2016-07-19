@@ -44,6 +44,9 @@ class MessageService
         return callback error if error?
 
         job = @queue.create('register', data)
+          .delay(0)
+          .priority('critical')
+          .attempts(5)
           .events(false)
           .removeOnComplete(true)
           .save (error) =>
