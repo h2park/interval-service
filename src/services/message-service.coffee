@@ -43,9 +43,10 @@ class MessageService
       @storeJobInMongo data, (error) =>
         return callback error if error?
 
-        job = @queue.create('register', data).
-          removeOnComplete(true).
-          save (error) =>
+        job = @queue.create('register', data)
+          .events(false)
+          .removeOnComplete(true)
+          .save (error) =>
             callback error, job
 
   storeJobInMongo: (data, callback) =>
@@ -68,15 +69,17 @@ class MessageService
       @redisClient.mset redisData, callback
 
   createPongJob: (data, callback)=>
-    job = @queue.create('pong', data).
-      removeOnComplete(true).
-      save (error) =>
+    job = @queue.create('pong', data)
+      .events(false)
+      .removeOnComplete(true)
+      .save (error) =>
         callback error, job
 
   createUnregisterJob: (data, callback)=>
-    job = @queue.create('unregister', data).
-      removeOnComplete(true).
-      save (error) =>
+    job = @queue.create('unregister', data)
+      .events(false)
+      .removeOnComplete(true)
+      .save (error) =>
         callback error, job
 
 module.exports = MessageService

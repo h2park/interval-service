@@ -16,9 +16,10 @@ client.on 'ready', =>
     datastore = database.intervals
 
     register = (record, callback) =>
-      queue.create('register', record.data).
-        removeOnComplete(true).
-        save (error) =>
+      queue.create('register', record.data)
+        .events(false)
+        .removeOnComplete(true)
+        .save (error) =>
           callback error
 
     datastore.find {}, (error, records) =>
