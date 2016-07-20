@@ -45,6 +45,7 @@ class MessageService
 
         job = @queue.create('register', data)
           .delay(0)
+          .ttl(5000)
           .priority('critical')
           .attempts(5)
           .events(false)
@@ -73,6 +74,7 @@ class MessageService
 
   createPongJob: (data, callback)=>
     job = @queue.create('pong', data)
+      .ttl(5000)
       .events(false)
       .removeOnComplete(true)
       .save (error) =>
@@ -80,6 +82,7 @@ class MessageService
 
   createUnregisterJob: (data, callback)=>
     job = @queue.create('unregister', data)
+      .ttl(5000)
       .events(false)
       .removeOnComplete(true)
       .save (error) =>

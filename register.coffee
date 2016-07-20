@@ -19,6 +19,7 @@ client.on 'ready', =>
       queue.create('register', record.data)
         .events(false)
         .removeOnComplete(true)
+        .ttl(5000)
         .save (error) =>
           callback error
 
