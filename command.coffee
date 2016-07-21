@@ -19,8 +19,7 @@ class Command
     process.exit 1
 
   catchErrors: =>
-    ravenWorker = @serverOptions.octobluRaven.worker()
-    ravenWorker.handleErrors()
+    @serverOptions.octobluRaven.patchGlobal()
 
   run: =>
     @panic new Error('Missing required environment variable: MONGODB_URI') if _.isEmpty @serverOptions.mongodbUri
