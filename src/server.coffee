@@ -5,6 +5,7 @@ bodyParser         = require 'body-parser'
 errorHandler       = require 'errorhandler'
 OctobluRaven       = require 'octoblu-raven'
 enableDestroy      = require 'server-destroy'
+compression        = require 'compression'
 sendError          = require 'express-send-error'
 MeshbluAuth        = require 'express-meshblu-auth'
 meshbluHealthcheck = require 'express-meshblu-healthcheck'
@@ -39,13 +40,17 @@ class Server
 
   run: (callback) =>
     @app = express()
+    @app.use compression()
+
     ravenExpress = @octobluRaven.express()
     @app.use ravenExpress.handleErrors()
     @app.use sendError()
 
     @app.use meshbluHealthcheck()
     @app.use expressVersion({format: '{"version": "%s"}'})
-    @app.use morgan 'dev', immediate: false unless @disableLogging
+    skip = (request, response) =>
+      return response.statusCode < 400
+    @app.use morgan 'dev', { immediate: false, skip } unless @disableLogging
     @app.use cors()
     @app.use errorHandler()
     @app.use bodyParser.urlencoded limit: '1mb', extended : true
