@@ -1,6 +1,6 @@
 {
   "name": "interval-service",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "Put some description here",
   "keywords": [],
   "homepage": "https://github.com/octoblu/interval",
@@ -23,7 +23,7 @@
     "chai": "^3.4.1",
     "istanbul": "^0.4.0",
     "mocha": "^2.3.4",
-    "mocha-istanbul": "^0.2.0",
+    "mocha-istanbul": "^0.3.0",
     "request": "^2.72.0",
     "sinon": "^1.17.2",
     "sinon-chai": "^2.8.0"
@@ -49,7 +49,7 @@
     "meshblu-http": "^7.0.0",
     "mongojs": "^2.4.0",
     "morgan": "^1.6.1",
-    "octoblu-raven": "^3.0.1",
+    "octoblu-raven": "^3.0.5",
     "server-destroy": "^1.0.1"
   },
   "license": "MIT",
