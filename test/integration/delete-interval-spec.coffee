@@ -18,6 +18,8 @@ describe 'Delete Interval', ->
         port: 0xd00d
         protocol: 'http'
       mongodbUri: 'localhost'
+      publicKey:
+        publicKey: null
       redisUri: 'redis://localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 

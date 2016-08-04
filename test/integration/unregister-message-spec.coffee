@@ -21,6 +21,8 @@ describe 'Unregister Message', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
+      publicKey:
+        publicKey: null
       mongodbUri: 'localhost'
       redisUri: 'redis://localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'

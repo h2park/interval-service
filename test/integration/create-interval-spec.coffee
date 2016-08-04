@@ -19,6 +19,8 @@ describe 'Create Interval', ->
         protocol: 'http'
       mongodbUri: 'localhost'
       redisUri: 'redis://localhost'
+      publicKey:
+        publicKey: null
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions

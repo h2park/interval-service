@@ -15,7 +15,6 @@ MessageService     = require './services/message-service'
 debug              = require('debug')('interval-service:server')
 Redis              = require 'ioredis'
 httpSignature      = require '@octoblu/connect-http-signature'
-publicKey          = require '../public-key.json'
 expressVersion     = require 'express-package-version'
 
 class Server
@@ -28,7 +27,9 @@ class Server
       @redisUri
       @intervalServiceUri
       @octobluRaven
+      @publicKey
     } = options
+    throw new Error 'Server requires: publicKey' unless @publicKey?
     throw new Error 'Server requires: meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
     throw new Error 'Server requires: redisUri' unless @redisUri?
@@ -57,7 +58,7 @@ class Server
     @app.use bodyParser.json limit : '1mb'
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
-    @app.use httpSignature.verify pub: publicKey.publicKey
+    @app.use httpSignature.verify pub: @publicKey.publicKey
     @app.use meshbluAuth.auth()
     @app.use ravenExpress.meshbluAuthContext()
 
