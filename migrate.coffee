@@ -16,21 +16,26 @@ saveToMongo = (data, callback) =>
   datastore.update {ownerId, nodeId}, record, upsert: true, callback
 
 fetchFromRedisAndSaveToMongo = (key, callback) =>
-  fetchFromRedis key, (data) =>
+  fetchFromRedis key, (error, data) =>
+    return callback error if error?
     saveToMongo data, callback
+
+hgetData = (key, callback) =>
+  client.hget key, "data", (error, data) =>
+    return callback error if error?
+    data = JSON.parse data
+    callback null, data
+
+getJob = (jobId, callback) =>
+  hgetData "{q}:job:#{jobId}", (error, data) =>
+    return callback error, data if error? or data?
+    hgetData "q:job:#{jobId}", callback
 
 fetchFromRedis = (key, callback) =>
   console.log 'fetchFromRedis', key
   client.smembers key, (error, jobIds) =>
     return callback error if error?
-    client.hget "{q}:job:#{_.first(jobIds)}", "data", (error, data) =>
-      return callback error if error?
-      data = JSON.parse data
-      callback data if data?
-      client.hget "q:job:#{_.first(jobIds)}", "data", (error, data) =>
-        return callback error if error?
-        data = JSON.parse data
-        callback data
+    getJob _.first(jobIds), callback
 
 client.keys 'interval/job*', (error, keys) =>
   throw error if error?
