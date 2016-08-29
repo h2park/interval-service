@@ -63,11 +63,22 @@ fetchFromRedisAndSaveToMongo = (key, callback) =>
       saveToMongo jobData, (error) =>
         return callback error if error?
         console.log key, 'no cleanup keys!' if !cleanupKeys?
+        return callback() if !cleanupKeys?
         # console.log 'n cleanups:', cleanupKeys.length if cleanupKeys?
         client.del cleanupKeys, callback
         # callback()
 
+timeoutId = undefined
+
+dontWaitTooLong = =>
+  clearTimeout timeoutId if timeoutId?
+  timeoutId = setTimeout =>
+    console.log 'took too long!'
+    process.exit 1
+  , 30*1000
+
 scanner = (cursor) =>
+  dontWaitTooLong()
   console.log 'scanning...', cursor
   client.scan cursor, 'MATCH', 'interval/job*', 'COUNT', '100', (error, data) =>
     console.log {error}, data[1].length
