@@ -56,19 +56,21 @@ class MessageService
   storeJobInMongo: (data, callback) =>
     ownerId = data.sendTo
     nodeId = data.transactionId ? data.nodeId # allow dynamic intervals
+    return callback() if data?.fireOnce
     @datastore.update {ownerId, nodeId}, {ownerId, nodeId, data}, upsert: true, callback
 
   storeCredentialsInRedis: (data, callback) =>
     flowId = data.sendTo
     ownerId = flowId
-    nodeId = data.transactionId ? data.nodeId # allow dynamic intervals
+    nodeId = data.nodeId
+    redisNodeId = data.transactionId ? data.nodeId
     @datastore.findOne {ownerId, nodeId}, (error, credentials) =>
       return callback error if error?
       return callback() unless credentials?
       redisData = [
-        "interval/uuid/#{flowId}/#{nodeId}"
+        "interval/uuid/#{flowId}/#{redisNodeId}"
         credentials.id
-        "interval/token/#{flowId}/#{nodeId}"
+        "interval/token/#{flowId}/#{redisNodeId}"
         credentials.token
       ]
       @redisClient.mset redisData, callback
