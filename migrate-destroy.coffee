@@ -27,7 +27,7 @@ getJob = (jobId, callback) =>
       return callback error, data, jobId
 
 findAndDestroy = (key, jobData, jobId, callback) =>
-  return callback null, jobData if jobData?
+  return callback null, jobData if jobData? or !jobId?
   newKey = key.replace /^interval\/job/, '*'
   client.keys newKey, (error, allKeys) =>
     # console.log 'eliminate!', allKeys
@@ -56,6 +56,7 @@ fetchFromRedis = (key, callback) =>
     getJob _.last(jobIds), callback
 
 fetchFromRedisAndSaveToMongo = (key, callback) =>
+  dontWaitTooLong()
   fetchFromRedis key, (error, jobData, jobId) =>
     return callback error if error?
     return callback unless jobId?
@@ -75,26 +76,28 @@ dontWaitTooLong = =>
   timeoutId = setTimeout =>
     console.log 'took too long!'
     process.exit 1
-  , 30*1000
+  , 60*1000
 
-scanner = (cursor) =>
-  dontWaitTooLong()
-  console.log 'scanning...', cursor
-  client.scan cursor, 'MATCH', 'interval/job*', 'COUNT', '100', (error, data) =>
-    console.log {error}, data[1].length
-    process.exit 1 if error?
-    keys = data[1]
-    async.eachLimit keys, 10, fetchFromRedisAndSaveToMongo, (error) =>
-      if error?
-        console.log {error}
-        process.exit 1
-      process.exit 0 if !data? or data[0] == '0'
-      scanner(data[0])
+# scanner = (cursor) =>
+#   dontWaitTooLong()
+#   console.log 'scanning...', cursor
+#   client.scan cursor, 'MATCH', 'interval/job*', 'COUNT', '100', (error, data) =>
+#     console.log {error}, data[1].length
+#     process.exit 1 if error?
+#     keys = data[1]
+#     async.eachLimit keys, 5, fetchFromRedisAndSaveToMongo, (error) =>
+#       if error?
+#         console.log {error}
+#         process.exit 1
+#       process.exit 0 if !data? or data[0] == '0'
+#       scanner(data[0])
+#
+# scanner(0)
 
-scanner(0)
-
-# client.keys 'interval/job*', (error, keys) =>
-#   throw error if error?
-#   async.eachLimit keys, 10, fetchFromRedisAndSaveToMongo, (error) =>
-#     console.log {error}
-#     process.exit 0
+dontWaitTooLong()
+client.keys 'interval/job*', (error, keys) =>
+  throw error if error?
+  console.log '# keys:', keys.length
+  async.eachLimit keys, 5, fetchFromRedisAndSaveToMongo, (error) =>
+    console.log {error}
+    process.exit 0
