@@ -11,7 +11,8 @@ class IntervalService
     @datastore = @db.intervals
 
   create: ({uuid, token, nodeId}, callback) =>
-    meshbluHttp = new MeshbluHttp _.extend {uuid, token}, @meshbluConfig
+    config = _.defaults {uuid, token}, @meshbluConfig
+    meshbluHttp = new MeshbluHttp config
     options =
       owner: uuid
       createdBy: 'interval-service'
