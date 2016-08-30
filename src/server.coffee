@@ -2,11 +2,9 @@ cors               = require 'cors'
 morgan             = require 'morgan'
 express            = require 'express'
 bodyParser         = require 'body-parser'
-errorHandler       = require 'errorhandler'
+compression        = require 'compression'
 OctobluRaven       = require 'octoblu-raven'
 enableDestroy      = require 'server-destroy'
-compression        = require 'compression'
-sendError          = require 'express-send-error'
 MeshbluAuth        = require 'express-meshblu-auth'
 meshbluHealthcheck = require 'express-meshblu-healthcheck'
 Router             = require './router'
@@ -41,26 +39,20 @@ class Server
 
   run: (callback) =>
     @app = express()
+    @octobluRaven.expressBundle({ @app })
     @app.use compression()
-
-    ravenExpress = @octobluRaven.express()
-    @app.use ravenExpress.handleErrors()
-    @app.use sendError()
-
     @app.use meshbluHealthcheck()
     @app.use expressVersion({format: '{"version": "%s"}'})
     skip = (request, response) =>
       return response.statusCode < 400
     @app.use morgan 'dev', { immediate: false, skip } unless @disableLogging
     @app.use cors()
-    @app.use errorHandler()
     @app.use bodyParser.urlencoded limit: '1mb', extended : true
     @app.use bodyParser.json limit : '1mb'
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
     @app.use httpSignature.verify pub: @publicKey.publicKey
     @app.use meshbluAuth.auth()
-    @app.use ravenExpress.meshbluAuthContext()
 
     @app.use (req, res, next) =>
       return httpSignature.gateway()(req, res, next) if req.signature?.verified == true
