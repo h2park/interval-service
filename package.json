@@ -1,6 +1,6 @@
 {
   "name": "interval-service",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Put some description here",
   "keywords": [],
   "homepage": "https://github.com/octoblu/interval",
@@ -48,7 +48,7 @@
     "meshblu-http": "^7.2.0",
     "mongojs": "^2.4.0",
     "morgan": "^1.6.1",
-    "octoblu-raven": "^4.0.0",
+    "octoblu-raven": "^4.0.1",
     "server-destroy": "^1.0.1"
   },
   "license": "MIT",
