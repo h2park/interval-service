@@ -8,3 +8,6 @@ before_script:
   - curl --silent --output public-key.json https://meshblu.octoblu.com/publickey
 after_success:
 - bash <(curl -s https://codecov.io/bash)
+branches:
+  only:
+  - "/^v[0-9]/"
