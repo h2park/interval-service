@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "node command.js",
-    "test": "mocha"
+    "test": "istanbul cover _mocha -- -R spec --require coffee-coverage/register-istanbul && mocha --reporter json > coverage/mocha.json"
   },
   "devDependencies": {
     "@octoblu/shmock": "^0.7.2",
