@@ -16,6 +16,8 @@ client.on 'ready', =>
     datastore = database.intervals
 
     register = (record, callback) =>
+      return callback() if record.data.fireOnce
+      return callback() unless record.token?
       queue.create('register', record.data)
         .events(false)
         .removeOnComplete(true)
