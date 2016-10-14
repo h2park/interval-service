@@ -13,7 +13,7 @@ saveToMongo = (data, callback) =>
   nodeId = data.nodeId
   console.log 'saving to mongo...'
   record = {ownerId, nodeId, data}
-  datastore.update {ownerId, nodeId}, record, upsert: true, callback
+  datastore.update {ownerId, nodeId}, {$set: record}, upsert: true, callback
 
 fetchFromRedisAndSaveToMongo = (key, callback) =>
   fetchFromRedis key, (error, data) =>

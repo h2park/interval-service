@@ -16,16 +16,22 @@ client.on 'ready', =>
     datastore = database.intervals
 
     register = (record, callback) =>
-      return callback() if record.data.fireOnce
-      return callback() unless record.token?
+      return process.nextTick callback unless record.data?
+      console.log(record)
+      return process.nextTick callback if record.data.fireOnce
+      console.log record.id, record.token
+      return process.nextTick callback unless record.token?
+      console.log record.ownerId
       queue.create('register', record.data)
         .events(false)
         .removeOnComplete(true)
         .ttl(5000)
         .save (error) =>
-          callback error
+          process.nextTick =>
+            callback error
 
-    datastore.find {}, (error, records) =>
+    datastore.find {"data.fireOnce": { "$exists": false }}, (error, records) =>
+      console.log(records.length);
       async.eachSeries records, register, (error) =>
         console.log {error}
         process.exit 0

@@ -57,7 +57,7 @@ class MessageService
     ownerId = data.sendTo
     nodeId = data.transactionId ? data.nodeId # allow dynamic intervals
     return callback() if data?.fireOnce
-    @datastore.update {ownerId, nodeId}, {ownerId, nodeId, data}, upsert: true, callback
+    @datastore.update {ownerId, nodeId}, {$set: {ownerId, nodeId, data}}, upsert: true, callback
 
   storeCredentialsInRedis: (data, callback) =>
     flowId = data.sendTo

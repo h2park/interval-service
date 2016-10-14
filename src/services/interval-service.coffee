@@ -53,7 +53,7 @@ class IntervalService
           nodeId: nodeId
           token: device.token
 
-        @datastore.update {ownerId: uuid, nodeId: nodeId}, data, upsert: true, (error) =>
+        @datastore.update {ownerId: uuid, nodeId: nodeId}, {$set: data}, upsert: true, (error) =>
           return callback error if error?
           callback null, device
 
