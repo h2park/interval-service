@@ -5,12 +5,15 @@ services:
   - redis
   - mongodb
 before_script:
-  - curl --silent --output public-key.json https://meshblu.octoblu.com/publickey
+  - 'curl --silent --output public-key.json https://meshblu.octoblu.com/publickey'
 branches:
   only:
-  - "/^v[0-9]/"
+    - '/^v[0-9]/'
 after_success:
-- npm run coverage
-- npm run mocha:json
-- bash <(curl -s https://codecov.io/bash)
-- bash <(curl -s https://codecov.octoblu.com/bash)
+  - npm run coverage
+  - 'npm run mocha:json'
+  - 'bash <(curl -s https://codecov.io/bash)'
+  - 'bash <(curl -s https://codecov.octoblu.com/bash)'
+notifications:
+  webhooks:
+    - 'https://beekeeper.octoblu.com/webhooks/travis:ci'
