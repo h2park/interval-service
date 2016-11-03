@@ -1,8 +1,7 @@
-http          = require 'http'
 mongojs       = require 'mongojs'
 request       = require 'request'
 enableDestroy = require 'server-destroy'
-shmock        = require '@octoblu/shmock'
+shmock        = require 'shmock'
 Server        = require '../../src/server'
 
 describe 'Delete Interval', ->
@@ -20,7 +19,6 @@ describe 'Delete Interval', ->
       mongodbUri: 'localhost'
       publicKey:
         publicKey: null
-      redisUri: 'redis://localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions
@@ -34,9 +32,9 @@ describe 'Delete Interval', ->
     @server.destroy()
 
   beforeEach (done) ->
-    @db = mongojs 'localhost', ['intervals']
-    @db.intervals.remove done
-    @datastore = @db.intervals
+    @db = mongojs 'localhost', ['soldiers']
+    @db.soldiers.remove done
+    @datastore = @db.soldiers
 
   describe 'On DELETE /nodes/:nodeId/destroy/:id', ->
     beforeEach (done) ->
@@ -80,7 +78,7 @@ describe 'Delete Interval', ->
       @deleteDevice.done()
 
     it 'should remove the mongodb entry', (done) ->
-      @datastore.findOne id: 'interval-uuid', (error, record) =>
+      @datastore.findOne 'metadata.uuid': 'interval-uuid', (error, record) =>
         return done error if error?
         expect(record).not.to.exist
         done()

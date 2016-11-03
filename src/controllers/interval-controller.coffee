@@ -2,24 +2,22 @@ _ = require 'lodash'
 
 class IntervalController
   constructor: ({@intervalService}) ->
+    throw new Error 'IntervalController: requries intervalService' unless @intervalService?
 
-  create: (req, res) =>
-    params =
-      nodeId: req.params.nodeId
+  create: (request, response) =>
+    { nodeId } = request.params
 
-    data = _.extend params, req.meshbluAuth
+    data = _.extend { nodeId }, request.meshbluAuth
     @intervalService.create data, (error, device) =>
-      return res.sendError(error) if error?
-      res.send device
+      return response.sendError(error) if error?
+      response.status(200).send device
 
-  destroy: (req, res) =>
-    params =
-      id: req.params.id
-      nodeId: req.params.nodeId
+  destroy: (request, response) =>
+    { intervalUuid, nodeId } = request.params
 
-    data = _.extend params, req.meshbluAuth
+    data = _.extend { intervalUuid, nodeId }, request.meshbluAuth
     @intervalService.destroy data, (error) =>
-      return res.sendError(error) if error?
-      res.sendStatus 200
+      return response.sendError(error) if error?
+      response.sendStatus 200
 
 module.exports = IntervalController

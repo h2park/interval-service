@@ -1,4 +1,4 @@
-_ = require 'lodash'
+_     = require 'lodash'
 debug = require('debug')('interval-service:message-controller')
 
 class MessageController

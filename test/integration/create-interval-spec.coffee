@@ -2,7 +2,7 @@ http          = require 'http'
 request       = require 'request'
 mongojs       = require 'mongojs'
 enableDestroy = require 'server-destroy'
-shmock        = require '@octoblu/shmock'
+shmock        = require 'shmock'
 Server        = require '../../src/server'
 
 describe 'Create Interval', ->
@@ -18,7 +18,6 @@ describe 'Create Interval', ->
         port: 0xd00d
         protocol: 'http'
       mongodbUri: 'localhost'
-      redisUri: 'redis://localhost'
       publicKey:
         publicKey: null
       intervalServiceUri: 'http://interval-service.octoblu.test'
@@ -34,9 +33,9 @@ describe 'Create Interval', ->
     @server.stop done
 
   beforeEach (done) ->
-    @db = mongojs 'localhost', ['intervals']
-    @db.intervals.remove done
-    @datastore = @db.intervals
+    @db = mongojs 'localhost', ['soldiers']
+    @db.soldiers.remove done
+    @datastore = @db.soldiers
 
   describe 'On POST /nodes/:nodeId/intervals', ->
     beforeEach (done) ->
@@ -85,7 +84,18 @@ describe 'Create Interval', ->
       expect(@body.uuid).to.equal 'interval-uuid'
 
     it 'should create the record in mongo', (done) ->
-      @datastore.findOne ownerId: 'some-uuid', nodeId: 'node-uuid', (error, record) =>
+      query =
+        'metadata.ownerUuid' : 'some-uuid'
+        'metadata.nodeId': 'node-uuid'
+      @datastore.findOne query, {_id: false}, (error, record) =>
         return done error if error?
-        expect(record).to.exist
+        expect(record).to.deep.equal
+          data:
+            nodeId: 'node-uuid'
+            uuid: 'interval-uuid'
+            token: 'interval-token'
+          metadata:
+            nodeId: 'node-uuid'
+            intervalUuid: 'interval-uuid'
+            ownerUuid: 'some-uuid'
         done()

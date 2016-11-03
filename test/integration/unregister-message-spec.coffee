@@ -1,15 +1,9 @@
-http          = require 'http'
 request       = require 'request'
+shmock        = require 'shmock'
 enableDestroy = require 'server-destroy'
-shmock        = require '@octoblu/shmock'
 Server        = require '../../src/server'
-redis         = require 'redis'
 
 describe 'Unregister Message', ->
-  before  (done) ->
-    @client = redis.createClient()
-    @client.on 'ready', done
-
   beforeEach (done) ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
@@ -24,7 +18,6 @@ describe 'Unregister Message', ->
       publicKey:
         publicKey: null
       mongodbUri: 'localhost'
-      redisUri: 'redis://localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions
@@ -32,9 +25,6 @@ describe 'Unregister Message', ->
     @server.run =>
       @serverPort = @server.address().port
       done()
-
-  afterEach (done) ->
-    @client.flushall done
 
   afterEach ->
     @meshblu.destroy()
@@ -72,27 +62,6 @@ describe 'Unregister Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-
-      it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should add one item in q:unregister:jobs', (done) ->
-        @client.llen '{q}:unregister:jobs', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should have a job entry q:job:1', (done) ->
-        @client.exists '{q}:job:1', (error, result) =>
-          expect(result).to.equal 1
-          done error
-
-      it 'should not have a job entry q:job:2', (done) ->
-        @client.exists '{q}:job:2', (error, result) =>
-          expect(result).to.equal 0
-          done error
-
     describe 'with topic of unregister-cron', ->
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
@@ -123,24 +92,3 @@ describe 'Unregister Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
-
-
-      it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should add one item in q:unregister:jobs', (done) ->
-        @client.llen '{q}:unregister:jobs', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should have a job entry q:job:1', (done) ->
-        @client.exists '{q}:job:1', (error, result) =>
-          expect(result).to.equal 1
-          done error
-
-      it 'should not have a job entry q:job:2', (done) ->
-        @client.exists '{q}:job:2', (error, result) =>
-          expect(result).to.equal 0
-          done error

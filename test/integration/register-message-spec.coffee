@@ -1,16 +1,10 @@
-http          = require 'http'
 request       = require 'request'
 mongojs       = require 'mongojs'
 enableDestroy = require 'server-destroy'
-shmock        = require '@octoblu/shmock'
+shmock        = require 'shmock'
 Server        = require '../../src/server'
-redis         = require 'redis'
 
 describe 'Register Message', ->
-  before  (done) ->
-    @client = redis.createClient()
-    @client.on 'ready', done
-
   beforeEach (done) ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
@@ -25,7 +19,6 @@ describe 'Register Message', ->
       publicKey:
         publicKey: null
       mongodbUri: 'localhost'
-      redisUri: 'redis://localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions
@@ -35,12 +28,9 @@ describe 'Register Message', ->
       done()
 
   beforeEach (done) ->
-    @db = mongojs 'localhost', ['intervals']
-    @db.intervals.remove done
-    @datastore = @db.intervals
-
-  afterEach (done) ->
-    @client.flushall done
+    @db = mongojs 'localhost', ['soldiers']
+    @db.soldiers.remove done
+    @datastore = @db.soldiers
 
   afterEach (done) ->
     @meshblu.destroy()
@@ -88,36 +78,6 @@ describe 'Register Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-      it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should add one item in q:register:jobs', (done) ->
-        @client.llen '{q}:register:jobs', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should have a job entry q:job:1', (done) ->
-        @client.exists '{q}:job:1', (error, result) =>
-          expect(result).to.equal 1
-          done error
-
-      it 'should not have a job entry q:job:2', (done) ->
-        @client.exists '{q}:job:2', (error, result) =>
-          expect(result).to.equal 0
-          done error
-
-      it 'should set interval/uuid/:flowId/:nodeId', (done) ->
-        @client.get 'interval/uuid/some-flow-uuid/some-interval-node', (error, uuid) =>
-          expect(uuid).to.equal 'interval-device-uuid'
-          done error
-
-      it 'should set interval/token/:flowId/:nodeId', (done) ->
-        @client.get 'interval/token/some-flow-uuid/some-interval-node', (error, token) =>
-          expect(token).to.equal 'interval-device-token'
-          done error
-
       it 'should save the job data to mongo', (done) ->
         @datastore.findOne {ownerId: 'some-flow-uuid', nodeId: 'some-interval-node'}, (error, record) =>
           return done error if error?
@@ -158,23 +118,3 @@ describe 'Register Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
-
-      it 'should add one item in q:jobs', (done) ->
-        @client.zlexcount '{q}:jobs', '-', '+', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should add one item in q:register:jobs', (done) ->
-        @client.llen '{q}:register:jobs', (error, length) =>
-          expect(length).to.equal 1
-          done error
-
-      it 'should have a job entry q:job:1', (done) ->
-        @client.exists '{q}:job:1', (error, result) =>
-          expect(result).to.equal 1
-          done error
-
-      it 'should not have a job entry q:job:2', (done) ->
-        @client.exists '{q}:job:2', (error, result) =>
-          expect(result).to.equal 0
-          done error
