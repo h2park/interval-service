@@ -6,7 +6,6 @@ class IntervalController
 
   create: (request, response) =>
     { nodeId } = request.params
-
     data = _.extend { nodeId }, request.meshbluAuth
     @intervalService.create data, (error, device) =>
       return response.sendError(error) if error?
@@ -14,7 +13,6 @@ class IntervalController
 
   destroy: (request, response) =>
     { intervalUuid, nodeId } = request.params
-
     data = _.extend { intervalUuid, nodeId }, request.meshbluAuth
     @intervalService.destroy data, (error) =>
       return response.sendError(error) if error?

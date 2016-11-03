@@ -40,6 +40,7 @@ class MessageService
     update['data.nodeId'] = transactionId || nodeId
     update['data.sendTo'] = sendTo if sendTo?
     update['data.transactionId'] = transactionId if transactionId?
+    update['data.fireOnce'] = fireOnce || false
     update['metadata.nonce'] = nonce if nonce?
     update['metadata.intervalTime'] = intervalTime if intervalTime?
     update['metadata.cronString'] = cronString if cronString?

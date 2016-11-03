@@ -17,6 +17,8 @@ describe 'Create Interval', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
+        uuid: 'the-interval-service-uuid'
+        uuid: 'the-interval-service-token'
       mongodbUri: 'interval-service-test'
       publicKey:
         publicKey: null

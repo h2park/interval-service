@@ -38,70 +38,141 @@ describe 'Register Message', ->
 
   context 'On POST /message', ->
     describe 'with topic of register-interval', ->
-      beforeEach (done) ->
-        record =
-          metadata:
-            ownerUuid: 'some-flow-uuid'
-            nodeId: 'some-interval-node'
-            intervalUuid: 'interval-device-uuid'
-          data:
-            uuid: 'interval-device-uuid'
-            token: 'interval-device-token'
-            nodeId: 'some-interval-node'
-        @datastore.insert record, done
-
-      beforeEach (done) ->
-        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
-
-        @authDevice = @meshblu
-          .post '/authenticate'
-          .set 'Authorization', "Basic #{userAuth}"
-          .reply 200, uuid: 'some-uuid', token: 'some-token'
-
-        options =
-          uri: '/message'
-          baseUrl: "http://localhost:#{@serverPort}"
-          auth:
-            username: 'some-uuid'
-            password: 'some-token'
-          json: true
-          body:
-            topic: 'register-interval'
-            payload:
-              nodeId: 'some-interval-node'
-              sendTo: 'some-flow-uuid'
-              nonce: 'this-is-nonce-ence'
-              intervalTime: 10000
-
-        request.post options, (error, @response, @body) =>
-          done error
-
-      it 'should return a 201', ->
-        expect(@response.statusCode).to.equal 201
-
-      it 'should auth handler', ->
-        @authDevice.done()
-
-      it 'should save the job data to mongo', (done) ->
-        query =
-          'metadata.ownerUuid': 'some-flow-uuid'
-          'metadata.nodeId': 'some-interval-node'
-        @datastore.findOne query, {_id: false}, (error, record) =>
-          return done error if error?
-          expectedRecord =
+      describe 'when fireOnce is true', ->
+        beforeEach (done) ->
+          record =
             metadata:
               ownerUuid: 'some-flow-uuid'
               nodeId: 'some-interval-node'
               intervalUuid: 'interval-device-uuid'
-              intervalTime: 10000
-              nonce: 'this-is-nonce-ence'
             data:
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'
               nodeId: 'some-interval-node'
-              sendTo: 'some-flow-uuid'
-          expect(record).to.deep.equal expectedRecord
-          done()
+              fireOnce: false
+          @datastore.insert record, done
+
+        beforeEach (done) ->
+          userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+
+          @authDevice = @meshblu
+            .post '/authenticate'
+            .set 'Authorization', "Basic #{userAuth}"
+            .reply 200, uuid: 'some-uuid', token: 'some-token'
+
+          options =
+            uri: '/message'
+            baseUrl: "http://localhost:#{@serverPort}"
+            auth:
+              username: 'some-uuid'
+              password: 'some-token'
+            json: true
+            body:
+              topic: 'register-interval'
+              payload:
+                nodeId: 'some-interval-node'
+                sendTo: 'some-flow-uuid'
+                nonce: 'this-is-nonce-ence'
+                intervalTime: 10000
+                fireOnce: true
+
+          request.post options, (error, @response, @body) =>
+            done error
+
+        it 'should return a 201', ->
+          expect(@response.statusCode).to.equal 201
+
+        it 'should auth handler', ->
+          @authDevice.done()
+
+        it 'should save the job data to mongo', (done) ->
+          query =
+            'metadata.ownerUuid': 'some-flow-uuid'
+            'metadata.nodeId': 'some-interval-node'
+          @datastore.findOne query, {_id: false}, (error, record) =>
+            return done error if error?
+            expectedRecord =
+              metadata:
+                ownerUuid: 'some-flow-uuid'
+                nodeId: 'some-interval-node'
+                intervalUuid: 'interval-device-uuid'
+                intervalTime: 10000
+                nonce: 'this-is-nonce-ence'
+              data:
+                fireOnce: true
+                uuid: 'interval-device-uuid'
+                token: 'interval-device-token'
+                nodeId: 'some-interval-node'
+                sendTo: 'some-flow-uuid'
+            expect(record).to.deep.equal expectedRecord
+            done()
+
+      describe 'when fireOnce is not set', ->
+        beforeEach (done) ->
+          record =
+            metadata:
+              ownerUuid: 'some-flow-uuid'
+              nodeId: 'some-interval-node'
+              intervalUuid: 'interval-device-uuid'
+            data:
+              uuid: 'interval-device-uuid'
+              token: 'interval-device-token'
+              nodeId: 'some-interval-node'
+          @datastore.insert record, done
+
+        beforeEach (done) ->
+          userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+
+          @authDevice = @meshblu
+            .post '/authenticate'
+            .set 'Authorization', "Basic #{userAuth}"
+            .reply 200, uuid: 'some-uuid', token: 'some-token'
+
+          options =
+            uri: '/message'
+            baseUrl: "http://localhost:#{@serverPort}"
+            auth:
+              username: 'some-uuid'
+              password: 'some-token'
+            json: true
+            body:
+              topic: 'register-interval'
+              payload:
+                nodeId: 'some-interval-node'
+                sendTo: 'some-flow-uuid'
+                nonce: 'this-is-nonce-ence'
+                intervalTime: 10000
+
+          request.post options, (error, @response, @body) =>
+            done error
+
+        it 'should return a 201', ->
+          expect(@response.statusCode).to.equal 201
+
+        it 'should auth handler', ->
+          @authDevice.done()
+
+        it 'should save the job data to mongo', (done) ->
+          query =
+            'metadata.ownerUuid': 'some-flow-uuid'
+            'metadata.nodeId': 'some-interval-node'
+          @datastore.findOne query, {_id: false}, (error, record) =>
+            return done error if error?
+            expectedRecord =
+              metadata:
+                ownerUuid: 'some-flow-uuid'
+                nodeId: 'some-interval-node'
+                intervalUuid: 'interval-device-uuid'
+                intervalTime: 10000
+                nonce: 'this-is-nonce-ence'
+              data:
+                fireOnce: false
+                uuid: 'interval-device-uuid'
+                token: 'interval-device-token'
+                nodeId: 'some-interval-node'
+                sendTo: 'some-flow-uuid'
+            expect(record).to.deep.equal expectedRecord
+            done()
 
     describe 'with topic of register-cron', ->
       beforeEach (done) ->
@@ -164,5 +235,6 @@ describe 'Register Message', ->
               token: 'interval-device-token'
               nodeId: 'some-cron-node'
               sendTo: 'some-flow-uuid'
+              fireOnce: false
           expect(record).to.deep.equal expectedRecord
           done()
