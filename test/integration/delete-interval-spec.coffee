@@ -16,7 +16,7 @@ describe 'Delete Interval', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
-      mongodbUri: 'localhost'
+      mongodbUri: 'interval-service-test'
       publicKey:
         publicKey: null
       intervalServiceUri: 'http://interval-service.octoblu.test'
@@ -32,7 +32,7 @@ describe 'Delete Interval', ->
     @server.destroy()
 
   beforeEach (done) ->
-    @db = mongojs 'localhost', ['soldiers']
+    @db = mongojs 'interval-service-test', ['soldiers']
     @db.soldiers.remove done
     @datastore = @db.soldiers
 

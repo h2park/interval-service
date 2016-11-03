@@ -18,7 +18,7 @@ describe 'Register Message', ->
         protocol: 'http'
       publicKey:
         publicKey: null
-      mongodbUri: 'localhost'
+      mongodbUri: 'interval-service-test'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
     @server = new Server serverOptions
@@ -28,7 +28,7 @@ describe 'Register Message', ->
       done()
 
   beforeEach (done) ->
-    @db = mongojs 'localhost', ['soldiers']
+    @db = mongojs 'interval-service-test', ['soldiers']
     @db.soldiers.remove done
     @datastore = @db.soldiers
 
@@ -39,13 +39,16 @@ describe 'Register Message', ->
   context 'On POST /message', ->
     describe 'with topic of register-interval', ->
       beforeEach (done) ->
-        data =
-          ownerId: 'some-flow-uuid'
-          nodeId: 'some-interval-node'
-          id: 'interval-device-uuid'
-          token: 'interval-device-token'
-
-        @datastore.insert data, done
+        record =
+          metadata:
+            ownerUuid: 'some-flow-uuid'
+            nodeId: 'some-interval-node'
+            intervalUuid: 'interval-device-uuid'
+          data:
+            uuid: 'interval-device-uuid'
+            token: 'interval-device-token'
+            nodeId: 'some-interval-node'
+        @datastore.insert record, done
 
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
@@ -68,6 +71,7 @@ describe 'Register Message', ->
               nodeId: 'some-interval-node'
               sendTo: 'some-flow-uuid'
               nonce: 'this-is-nonce-ence'
+              intervalTime: 10000
 
         request.post options, (error, @response, @body) =>
           done error
@@ -79,16 +83,39 @@ describe 'Register Message', ->
         @authDevice.done()
 
       it 'should save the job data to mongo', (done) ->
-        @datastore.findOne {ownerId: 'some-flow-uuid', nodeId: 'some-interval-node'}, (error, record) =>
+        query =
+          'metadata.ownerUuid': 'some-flow-uuid'
+          'metadata.nodeId': 'some-interval-node'
+        @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
-          data =
-            nodeId: 'some-interval-node'
-            sendTo: 'some-flow-uuid'
-            nonce: 'this-is-nonce-ence'
-          expect(record.data).to.deep.equal data
+          expectedRecord =
+            metadata:
+              ownerUuid: 'some-flow-uuid'
+              nodeId: 'some-interval-node'
+              intervalUuid: 'interval-device-uuid'
+              intervalTime: 10000
+              nonce: 'this-is-nonce-ence'
+            data:
+              uuid: 'interval-device-uuid'
+              token: 'interval-device-token'
+              nodeId: 'some-interval-node'
+              sendTo: 'some-flow-uuid'
+          expect(record).to.deep.equal expectedRecord
           done()
 
     describe 'with topic of register-cron', ->
+      beforeEach (done) ->
+        record =
+          metadata:
+            ownerUuid: 'some-flow-uuid'
+            nodeId: 'some-cron-node'
+            intervalUuid: 'interval-device-uuid'
+          data:
+            uuid: 'interval-device-uuid'
+            token: 'interval-device-token'
+            nodeId: 'some-cron-node'
+        @datastore.insert record, done
+
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -109,6 +136,7 @@ describe 'Register Message', ->
             payload:
               nodeId: 'some-cron-node'
               sendTo: 'some-flow-uuid'
+              cronString: 'some-cron-string'
 
         request.post options, (error, @response, @body) =>
           done error
@@ -118,3 +146,23 @@ describe 'Register Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
+
+      it 'should save the job data to mongo', (done) ->
+        query =
+          'metadata.ownerUuid': 'some-flow-uuid'
+          'metadata.nodeId': 'some-cron-node'
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expectedRecord =
+            metadata:
+              ownerUuid: 'some-flow-uuid'
+              nodeId: 'some-cron-node'
+              intervalUuid: 'interval-device-uuid'
+              cronString: 'some-cron-string'
+            data:
+              uuid: 'interval-device-uuid'
+              token: 'interval-device-token'
+              nodeId: 'some-cron-node'
+              sendTo: 'some-flow-uuid'
+          expect(record).to.deep.equal expectedRecord
+          done()

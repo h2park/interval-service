@@ -7,28 +7,60 @@ class MessageService
     throw new error 'IntervalService requires: database' unless database?
     @collection = database.collection 'soldiers'
 
-  subscribe: (params, callback) =>
+  subscribe: (params={}, callback) =>
     debug 'subscribe', JSON.stringify params
-    return callback(new Error 'nodeId or sendTo not defined') unless params?.sendTo? && params?.nodeId?
-    return callback(new Error 'noUnsubscribe should also set fireOnce') if params.noUnsubscribe and !params.fireOnce
-    return callback(new Error 'intervalTime must be at least 1000ms') if !params.cronString && params.intervalTime < 1000
-    @createRegisterJob params, callback
+    unless params.sendTo? and params.nodeId?
+      return callback @_userError('nodeId or sendTo not defined', 422)
+    if params.noUnsubscribe and !params.fireOnce
+      return callback @_userError('noUnsubscribe should also set fireOnce', 422)
+    if !params.cronString and params.intervalTime < 1000
+      return callback @_userError('intervalTime must be at least 1000ms', 422)
+    @_storeJobInMongo params, callback
 
-  unsubscribe: (params, callback) =>
+  unsubscribe: (params={}, callback) =>
     debug 'unsubscribe', JSON.stringify params
-    return callback new Error 'nodeId or sendTo not defined' unless params?.sendTo? && params?.nodeId?
-    @createUnregisterJob params, callback
-
-  createRegisterJob: (data, callback) =>
-    @_storeJobInMongo data, callback
-
-  createUnregisterJob: (data, callback)=>
-    @_removeJobInMongo data, callback
+    unless params.sendTo? and params.nodeId?
+      return callback @_userError('nodeId or sendTo not defined', 422)
+    @_removeJobInMongo params, callback
 
   _storeJobInMongo: (data, callback) =>
-    ownerId = data.sendTo
-    nodeId = data.transactionId ? data.nodeId # allow dynamic intervals
-    return callback() if data?.fireOnce
-    @collection.update {ownerId, nodeId}, {$set: {ownerId, nodeId, data}}, upsert: true, callback
+    {
+      sendTo,
+      intervalTime,
+      fireOnce,
+      nodeId,
+      transactionId,
+      nonce,
+      cronString,
+    } = data
+    query =
+      'metadata.ownerUuid': sendTo
+      'metadata.nodeId': nodeId
+    update = {}
+    update['data.nodeId'] = transactionId || nodeId
+    update['data.sendTo'] = sendTo if sendTo?
+    update['data.transactionId'] = transactionId if transactionId?
+    update['metadata.nonce'] = nonce if nonce?
+    update['metadata.intervalTime'] = intervalTime if intervalTime?
+    update['metadata.cronString'] = cronString if cronString?
+    @collection.update query, {$set: update}, {upsert: true}, callback
+
+  _removeJobInMongo: (data, callback) =>
+    {
+      sendTo,
+      nodeId,
+      transactionId,
+    } = data
+
+    query = {
+      'metadata.ownerUuid': sendTo
+      'metadata.nodeId'   : nodeId
+    }
+    @collection.remove query, callback
+
+  _userError: (message, code) =>
+    error = new Error message
+    error.code = code ? 500
+    return error
 
 module.exports = MessageService

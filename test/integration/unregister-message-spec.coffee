@@ -1,6 +1,7 @@
 request       = require 'request'
 shmock        = require 'shmock'
 enableDestroy = require 'server-destroy'
+mongojs       = require 'mongojs'
 Server        = require '../../src/server'
 
 describe 'Unregister Message', ->
@@ -26,12 +27,29 @@ describe 'Unregister Message', ->
       @serverPort = @server.address().port
       done()
 
+  beforeEach (done) ->
+    @db = mongojs 'localhost', ['soldiers']
+    @db.soldiers.remove done
+    @datastore = @db.soldiers
+
   afterEach ->
     @meshblu.destroy()
     @server.destroy()
 
   context 'On POST /message', ->
     describe 'with topic of unregister-interval', ->
+      beforeEach (done) ->
+        record =
+          metadata:
+            ownerUuid: 'some-flow-uuid'
+            nodeId: 'some-interval-node'
+            intervalUuid: 'interval-device-uuid'
+          data:
+            uuid: 'interval-device-uuid'
+            token: 'interval-device-token'
+            nodeId: 'some-interval-node'
+        @datastore.insert record, done
+
       beforeEach (done) ->
         userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
@@ -56,11 +74,20 @@ describe 'Unregister Message', ->
         request.post options, (error, @response, @body) =>
           done error
 
-      it 'should return a 201', ->
-        expect(@response.statusCode).to.equal 201
+      it 'should return a 204', ->
+        expect(@response.statusCode).to.equal 204
 
       it 'should auth handler', ->
         @authDevice.done()
+
+      it 'should remove the job data to mongo', (done) ->
+        query =
+          'metadata.ownerUuid': 'some-flow-uuid'
+          'metadata.nodeId': 'some-interval-node'
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expect(record).to.not.exist
+          done()
 
     describe 'with topic of unregister-cron', ->
       beforeEach (done) ->
@@ -88,7 +115,16 @@ describe 'Unregister Message', ->
           done error
 
       it 'should return a 201', ->
-        expect(@response.statusCode).to.equal 201
+        expect(@response.statusCode).to.equal 204
 
       it 'should auth handler', ->
         @authDevice.done()
+
+      it 'should remove the job data to mongo', (done) ->
+        query =
+          'metadata.ownerUuid': 'some-flow-uuid'
+          'metadata.nodeId': 'some-cron-node'
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expect(record).to.not.exist
+          done()
