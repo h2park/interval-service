@@ -1,10 +1,10 @@
 {
   "name": "interval-service",
   "version": "2.1.10",
-  "description": "Put some description here",
+  "description": "service for creating timed jobs",
   "keywords": [],
-  "homepage": "https://github.com/octoblu/interval",
-  "bugs": "https://github.com/octoblu/interval/issues",
+  "homepage": "https://github.com/octoblu/interval-service",
+  "bugs": "https://github.com/octoblu/interval-service/issues",
   "author": {
     "name": "Octoblu",
     "url": "https://github.com/octoblu"
@@ -12,7 +12,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/octoblu/interval.git"
+    "url": "https://github.com/octoblu/interval-service.git"
   },
   "scripts": {
     "start": "node command.js",
@@ -44,7 +44,8 @@
     "meshblu-config": "^6.0.0",
     "meshblu-http": "^9.1.0",
     "mongojs": "^2.4.0",
-    "server-destroy": "^1.0.1"
+    "server-destroy": "^1.0.1",
+    "sigterm-handler": "^2.0.0"
   },
   "license": "MIT",
   "nyc": {
