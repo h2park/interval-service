@@ -31,42 +31,19 @@ class MessageService
     return @_updateJob(data, callback)
 
   _cloneJob: (data, callback) =>
-    {
-      sendTo,
-      intervalTime,
-      fireOnce,
-      nodeId,
-      transactionId,
-      nonce,
-      cronString,
-    } = data
-    query = {}
-    query['metadata.ownerUuid'] = sendTo
-    query['metadata.nodeId'] = nodeId
-    @collection.findOne query, {_id: false}, (error, job) =>
+    @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>
       return callback error if error?
       return callback new Error('Missing record') unless job?
-      job.data.nodeId = nodeId
-      job.data.sendTo = sendTo
-      job.data.transactionId = transactionId
-      job.data.fireOnce = true
-      delete job.metadata.nodeId
-      job.metadata.transactionId = transactionId
-      job.metadata.nonce = nonce if nonce?
-      job.metadata.intervalTime = intervalTime if intervalTime?
-      job.metadata.cronString = cronString if cronString?
-      job.metadata.processAt = moment().unix()
-      debug 'creating cloned job', job
-      @collection.insert job, callback
+      @collection.insert @_cloneJobRecord(job, data), callback
 
   _updateJob: (data, callback) =>
-    { sendTo, nodeId } = data
+    @collection.update @_getQuery(data), @_getUpdateQuery(data), callback
+
+  _getQuery: ({ sendTo, nodeId }) =>
     query = {}
     query['metadata.ownerUuid'] = sendTo
     query['metadata.nodeId'] = nodeId
-    update = @_getUpdateQuery(data)
-    overview 'updateJob', update
-    @collection.update query, {$set: update}, {upsert: true}, callback
+    return query
 
   _getUpdateQuery: (data) =>
     {
@@ -82,12 +59,35 @@ class MessageService
     update['data.nodeId'] = nodeId
     update['data.sendTo'] = sendTo
     update['data.transactionId'] = transactionId if transactionId?
-    update['data.fireOnce'] = fireOnce || false
+    update['data.fireOnce'] = false
     update['metadata.nonce'] = nonce if nonce?
     update['metadata.intervalTime'] = intervalTime if intervalTime?
     update['metadata.cronString'] = cronString if cronString?
     update['metadata.processAt'] = moment().unix() unless fireOnce
-    return update
+    return { $set: update }
+
+  _cloneJobRecord: (job, data) =>
+    job = _.cloneDeep(job)
+    {
+      sendTo,
+      intervalTime,
+      fireOnce,
+      nodeId,
+      transactionId,
+      nonce,
+      cronString,
+    } = data
+    job.data.nodeId = nodeId
+    job.data.sendTo = sendTo
+    job.data.transactionId = transactionId
+    job.data.fireOnce = true
+    delete job.metadata.nodeId
+    job.metadata.transactionId = transactionId
+    job.metadata.nonce = nonce if nonce?
+    job.metadata.intervalTime = intervalTime if intervalTime?
+    job.metadata.cronString = cronString if cronString?
+    job.metadata.processAt = moment().unix()
+    return job
 
   _removeJobInMongo: (data, callback) =>
     {
@@ -98,8 +98,9 @@ class MessageService
 
     query = {}
     query['metadata.ownerUuid'] = sendTo
-    query['metadata.nodeId'] = nodeId if nodeId?
-    query['metadata.transactionId'] = transactionId if transactionId?
+    query['$or'] = []
+    query['$or'].push { 'metadata.nodeId': nodeId } if nodeId?
+    query['$or'].push { 'metadata.transactionId': transactionId } if transactionId?
     @collection.remove query, callback
 
   _userError: (message, code) =>
