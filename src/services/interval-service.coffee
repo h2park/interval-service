@@ -1,6 +1,7 @@
 _           = require 'lodash'
 async       = require 'async'
 MeshbluHttp = require 'meshblu-http'
+debug       = require('debug')('interval-service:interval-service')
 
 class IntervalService
   constructor: ({@meshbluConfig, database, @intervalServiceUri}) ->
@@ -10,6 +11,7 @@ class IntervalService
     @collection = database.collection 'soldiers'
 
   create: (params, callback) =>
+    debug 'create params', params
     ownerUuid  = params.uuid
     ownerToken = params.token
     nodeId     = params.nodeId
@@ -50,7 +52,7 @@ class IntervalService
         @_getMeshbluHttp({ uuid: intervalUuid, token: intervalToken })
           .createSubscription options, (error) =>
             return callback error if error?
-            data =
+            update =
               'metadata.ownerUuid': ownerUuid
               'metadata.intervalUuid': intervalUuid
               'metadata.nodeId': nodeId
@@ -60,7 +62,7 @@ class IntervalService
             query =
               'metadata.ownerUuid': ownerUuid
               'metadata.nodeId': nodeId
-            @collection.update query, {$set: data}, {upsert: true}, (error) =>
+            @collection.update query, {$set: update}, {upsert: true}, (error) =>
               return callback error if error?
               callback null, device
 

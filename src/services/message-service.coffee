@@ -1,5 +1,6 @@
 _       = require 'lodash'
 async   = require 'async'
+moment  = require 'moment'
 debug   = require('debug')('interval-service:message-service')
 
 class MessageService
@@ -35,7 +36,7 @@ class MessageService
     } = data
     query =
       'metadata.ownerUuid': sendTo
-      'metadata.nodeId': nodeId
+      'metadata.nodeId': transactionId || nodeId
     update = {}
     update['data.nodeId'] = transactionId || nodeId
     update['data.sendTo'] = sendTo if sendTo?
@@ -44,6 +45,7 @@ class MessageService
     update['metadata.nonce'] = nonce if nonce?
     update['metadata.intervalTime'] = intervalTime if intervalTime?
     update['metadata.cronString'] = cronString if cronString?
+    update['metadata.processAt'] = moment().unix()
     @collection.update query, {$set: update}, {upsert: true}, callback
 
   _removeJobInMongo: (data, callback) =>
@@ -55,7 +57,7 @@ class MessageService
 
     query = {
       'metadata.ownerUuid': sendTo
-      'metadata.nodeId'   : nodeId
+      'metadata.nodeId'   : transactionId || nodeId
     }
     @collection.remove query, callback
 

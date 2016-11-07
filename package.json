@@ -43,6 +43,7 @@
     "lodash": "^4.15.0",
     "meshblu-config": "^6.0.0",
     "meshblu-http": "^9.1.0",
+    "moment": "^2.15.2",
     "mongojs": "^2.4.0",
     "server-destroy": "^1.0.1",
     "sigterm-handler": "^2.0.0"

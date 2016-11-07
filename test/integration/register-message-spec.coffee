@@ -2,6 +2,7 @@ request       = require 'request'
 mongojs       = require 'mongojs'
 enableDestroy = require 'server-destroy'
 shmock        = require 'shmock'
+moment        = require 'moment'
 Server        = require '../../src/server'
 
 describe 'Register Message', ->
@@ -98,6 +99,7 @@ describe 'Register Message', ->
                 intervalUuid: 'interval-device-uuid'
                 intervalTime: 10000
                 nonce: 'this-is-nonce-ence'
+                processAt: moment.unix()
               data:
                 fireOnce: true
                 uuid: 'interval-device-uuid'
@@ -165,6 +167,7 @@ describe 'Register Message', ->
                 intervalUuid: 'interval-device-uuid'
                 intervalTime: 10000
                 nonce: 'this-is-nonce-ence'
+                processAt: moment.unix()
               data:
                 fireOnce: false
                 uuid: 'interval-device-uuid'
@@ -230,6 +233,7 @@ describe 'Register Message', ->
               nodeId: 'some-cron-node'
               intervalUuid: 'interval-device-uuid'
               cronString: 'some-cron-string'
+              processAt: moment.unix()
             data:
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'
