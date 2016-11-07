@@ -40,7 +40,7 @@ class MessageController
 
   unregister: (request, response) =>
     { payload, fromUuid } = request.body
-    debug 'register', JSON.stringify payload
+    debug 'unregister', JSON.stringify payload
     params = _.merge {}, payload, { sendTo: fromUuid }
     @messageService.unsubscribe params, (error) =>
       return response.sendError(error) if error?

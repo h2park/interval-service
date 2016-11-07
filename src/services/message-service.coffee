@@ -94,13 +94,15 @@ class MessageService
       sendTo,
       nodeId,
       transactionId,
+      fireOnce
     } = data
 
     query = {}
     query['metadata.ownerUuid'] = sendTo
-    query['$or'] = []
-    query['$or'].push { 'metadata.nodeId': nodeId } if nodeId?
-    query['$or'].push { 'metadata.transactionId': transactionId } if transactionId?
+    if fireOnce and transactionId?
+      query['metadata.transactionId'] = transactionId
+    else
+      query['metadata.nodeId'] = nodeId
     @collection.remove query, callback
 
   _userError: (message, code) =>
