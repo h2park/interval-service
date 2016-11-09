@@ -98,6 +98,8 @@ describe 'Register Message', ->
                 intervalTime: 10000
                 nonce: 'this-is-nonce-ence'
                 processAt: moment().unix()
+                processNow: true
+                fireOnce: false
               data:
                 fireOnce: false
                 uuid: 'interval-device-uuid'
@@ -164,6 +166,8 @@ describe 'Register Message', ->
               intervalUuid: 'interval-device-uuid'
               cronString: 'some-cron-string'
               processAt: moment().unix()
+              processNow: true
+              fireOnce: false
             data:
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'

@@ -63,7 +63,9 @@ class MessageService
     update['metadata.nonce'] = nonce if nonce?
     update['metadata.intervalTime'] = intervalTime if intervalTime?
     update['metadata.cronString'] = cronString if cronString?
-    update['metadata.processAt'] = moment().unix() unless fireOnce
+    update['metadata.processAt'] = moment().unix()
+    update['metadata.processNow'] = true
+    update['metadata.fireOnce'] = false
     return { $set: update }
 
   _cloneJobRecord: (job, data) =>
@@ -87,6 +89,8 @@ class MessageService
     job.metadata.intervalTime = intervalTime if intervalTime?
     job.metadata.cronString = cronString if cronString?
     job.metadata.processAt = moment().unix()
+    job.metadata.processNow = true
+    job.metadata.fireOnce = true
     return job
 
   _removeJobInMongo: (data, callback) =>

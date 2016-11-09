@@ -100,6 +100,8 @@ describe 'Fire Once Register Message', ->
               intervalTime: 10000
               nonce: 'this-is-nonce-ence'
               processAt: moment().unix()
+              processNow: true
+              fireOnce: true
             data:
               fireOnce: true
               uuid: 'interval-device-uuid'
