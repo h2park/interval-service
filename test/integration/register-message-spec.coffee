@@ -76,6 +76,7 @@ describe 'Register Message', ->
                 intervalTime: 10000
 
           request.post options, (error, @response, @body) =>
+            @processAt = moment().unix()
             done error
 
         it 'should return a 201', ->
@@ -97,7 +98,7 @@ describe 'Register Message', ->
                 intervalUuid: 'interval-device-uuid'
                 intervalTime: 10000
                 nonce: 'this-is-nonce-ence'
-                processAt: moment().unix()
+                processAt: @processAt
                 processNow: true
                 fireOnce: false
               data:
@@ -145,6 +146,7 @@ describe 'Register Message', ->
               cronString: 'some-cron-string'
 
         request.post options, (error, @response, @body) =>
+          @processAt = moment().unix()
           done error
 
       it 'should return a 201', ->
@@ -165,7 +167,7 @@ describe 'Register Message', ->
               nodeId: 'some-cron-node'
               intervalUuid: 'interval-device-uuid'
               cronString: 'some-cron-string'
-              processAt: moment().unix()
+              processAt: @processAt
               processNow: true
               fireOnce: false
             data:

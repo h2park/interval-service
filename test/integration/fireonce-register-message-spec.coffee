@@ -78,6 +78,7 @@ describe 'Fire Once Register Message', ->
               fireOnce: true
 
         request.post options, (error, @response, @body) =>
+          @processAt = moment().unix()
           done error
 
       it 'should return a 201', ->
@@ -99,7 +100,7 @@ describe 'Fire Once Register Message', ->
               intervalUuid: 'interval-device-uuid'
               intervalTime: 10000
               nonce: 'this-is-nonce-ence'
-              processAt: moment().unix()
+              processAt: @processAt
               processNow: true
               fireOnce: true
             data:
