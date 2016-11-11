@@ -8,6 +8,7 @@ class MessageService
   constructor: ({database}) ->
     throw new error 'IntervalService requires: database' unless database?
     @collection = database.collection 'soldiers'
+    @legacyCollection = database.collection 'intervals'
 
   subscribe: (params={}, callback) =>
     debug 'subscribe', JSON.stringify params
@@ -33,8 +34,18 @@ class MessageService
   _cloneJob: (data, callback) =>
     @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>
       return callback error if error?
-      return callback new Error('Missing record') unless job?
+      return @_cloneFromLegacy data, callback unless job?
       @collection.insert @_cloneJobRecord(job, data), callback
+
+  _cloneFromLegacy: (data, callback) =>
+    query =
+      'ownerId': data.sendTo,
+      'nodeId' : data.nodeId,
+    @legacyCollection.findOne query, {_id: false}, (error, legacyJob) =>
+      return callback error if error?
+      return callback @_userError('Missing record', 404) unless legacyJob?
+      convertedJob = @_cloneLegacyJobRecord(legacyJob)
+      @collection.insert @_cloneJobRecord(convertedJob, data), callback
 
   _updateJob: (data, callback) =>
     @collection.update @_getQuery(data), @_getUpdateQuery(data), callback
@@ -68,7 +79,7 @@ class MessageService
     update['metadata.fireOnce'] = false
     return { $set: update }
 
-  _cloneJobRecord: (job, data) =>
+  _cloneJobRecord: (job={}, data) =>
     job = _.cloneDeep(job)
     {
       sendTo,
@@ -79,10 +90,12 @@ class MessageService
       nonce,
       cronString,
     } = data
+    job.data ?= {}
     job.data.nodeId = nodeId
     job.data.sendTo = sendTo
     job.data.transactionId = transactionId
     job.data.fireOnce = true
+    job.metadata ?= {}
     delete job.metadata.nodeId
     job.metadata.transactionId = transactionId
     job.metadata.nonce = nonce if nonce?
@@ -92,6 +105,38 @@ class MessageService
     job.metadata.processNow = true
     job.metadata.fireOnce = true
     return job
+
+  _cloneLegacyJobRecord: ({ id, token, ownerId, nodeId, transactionId, data }) =>
+    {
+      sendTo,
+      intervalTime,
+      fireOnce,
+      nonce,
+      cronString,
+    } = data
+    transactionId ?= data.transactionId
+    nodeId ?= data.nodeId
+    record = {
+      data: {}
+      metadata: {}
+    }
+    record.data.nodeId = nodeId
+    record.data.sendTo = sendTo
+    record.data.transactionId = transactionId if transactionId?
+    record.data.fireOnce = fireOnce
+    record.data.uuid = id if id?
+    record.data.token = token if token?
+    record.data.nodeId = nodeId
+    record.metadata.nonce = nonce if nonce?
+    record.metadata.intervalTime = intervalTime if intervalTime?
+    record.metadata.cronString = cronString if cronString?
+    record.metadata.processAt = moment().unix()
+    record.metadata.processNow = true
+    record.metadata.fireOnce = fireOnce
+    record.metadata.ownerUuid = ownerId
+    record.metadata.intervalUuid = id if id?
+    record.metadata.nodeId = nodeId
+    return record
 
   _removeJobInMongo: (data, callback) =>
     {
