@@ -72,7 +72,7 @@ class MessageService
     update['data.transactionId'] = transactionId if transactionId?
     update['data.fireOnce'] = false
     update['metadata.nonce'] = nonce if nonce?
-    update['metadata.intervalTime'] = intervalTime if intervalTime?
+    update['metadata.intervalTime'] = parseInt(intervalTime) if intervalTime?
     update['metadata.cronString'] = cronString if cronString?
     update['metadata.processAt'] = moment().unix()
     update['metadata.processNow'] = true
@@ -99,23 +99,24 @@ class MessageService
     delete job.metadata.nodeId
     job.metadata.transactionId = transactionId
     job.metadata.nonce = nonce if nonce?
-    job.metadata.intervalTime = intervalTime if intervalTime?
+    job.metadata.intervalTime = parseInt(intervalTime) if intervalTime?
     job.metadata.cronString = cronString if cronString?
     job.metadata.processAt = moment().unix()
     job.metadata.processNow = true
     job.metadata.fireOnce = true
     return job
 
-  _cloneLegacyJobRecord: ({ id, token, ownerId, nodeId, transactionId, data }) =>
+  _cloneLegacyJobRecord: ({ id, token, ownerId, data }) =>
     {
       sendTo,
       intervalTime,
       fireOnce,
       nonce,
       cronString,
+      nodeId,
+      transactionId,
     } = data ? {}
-    transactionId ?= data?.transactionId
-    nodeId ?= data?.nodeId
+    fireOnce ?= false
     record = {
       data: {}
       metadata: {}
@@ -128,12 +129,10 @@ class MessageService
     record.data.token = token if token?
     record.data.nodeId = nodeId if nodeId?
     record.metadata.nonce = nonce if nonce?
-    record.metadata.intervalTime = intervalTime if intervalTime?
+    record.metadata.intervalTime = parseInt(intervalTime) if intervalTime?
     record.metadata.cronString = cronString if cronString?
-    record.metadata.processAt = moment().unix()
-    record.metadata.processNow = true
     record.metadata.fireOnce = fireOnce
-    record.metadata.ownerUuid = ownerId ? sendTo
+    record.metadata.ownerUuid = ownerId
     record.metadata.intervalUuid = id if id?
     record.metadata.nodeId = nodeId
     return record
