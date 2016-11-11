@@ -113,27 +113,27 @@ class MessageService
       fireOnce,
       nonce,
       cronString,
-    } = data
-    transactionId ?= data.transactionId
-    nodeId ?= data.nodeId
+    } = data ? {}
+    transactionId ?= data?.transactionId
+    nodeId ?= data?.nodeId
     record = {
       data: {}
       metadata: {}
     }
     record.data.nodeId = nodeId
-    record.data.sendTo = sendTo
+    record.data.sendTo = sendTo ? ownerId
     record.data.transactionId = transactionId if transactionId?
     record.data.fireOnce = fireOnce
     record.data.uuid = id if id?
     record.data.token = token if token?
-    record.data.nodeId = nodeId
+    record.data.nodeId = nodeId if nodeId?
     record.metadata.nonce = nonce if nonce?
     record.metadata.intervalTime = intervalTime if intervalTime?
     record.metadata.cronString = cronString if cronString?
     record.metadata.processAt = moment().unix()
     record.metadata.processNow = true
     record.metadata.fireOnce = fireOnce
-    record.metadata.ownerUuid = ownerId
+    record.metadata.ownerUuid = ownerId ? sendTo
     record.metadata.intervalUuid = id if id?
     record.metadata.nodeId = nodeId
     return record
