@@ -78,7 +78,7 @@ describe 'Unregister Message', ->
 
         request.post options, (error, @response, @body) =>
           done error
-          
+
       it 'should return a 204', ->
         expect(@response.statusCode).to.equal 204
 
@@ -152,22 +152,23 @@ describe 'Unregister Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-      it 'should remove the job data to mongo', (done) ->
+      it 'should remove the transaction job data from mongo', (done) ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
           'metadata.nodeId': 'some-interval-node'
+          'metadata.transactionId': 'some-transaction-id'
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expect(record).to.not.exist
           done()
 
-      it 'should remove the fireOnce job data to mongo', (done) ->
+      it 'should not remove the base job data from mongo', (done) ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
-          'metadata.transactionId': 'some-transaction-id'
+          'metadata.nodeId': 'some-interval-node'
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
-          expect(record).to.not.exist
+          expect(record).to.exist
           done()
 
     describe 'with topic of unregister-cron', ->

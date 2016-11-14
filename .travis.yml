@@ -4,8 +4,12 @@ node_js:
 services:
   - redis
   - mongodb
+before_install:
+- npm install --global yarn
+install:
+- yarn install
 before_script:
-  - 'curl --silent --output public-key.json https://meshblu.octoblu.com/publickey'
+- 'curl --silent --output public-key.json https://meshblu.octoblu.com/publickey'
 branches:
   only:
     - '/^v[0-9]/'

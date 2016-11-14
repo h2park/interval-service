@@ -157,8 +157,9 @@ class MessageService
 
     query = {}
     query['metadata.ownerUuid'] = sendTo
-    if fireOnce and transactionId?
+    if transactionId?
       query['metadata.transactionId'] = transactionId
+      query['metadata.nodeId'] = nodeId
     else
       query['metadata.nodeId'] = nodeId
     @collection.remove query, callback
