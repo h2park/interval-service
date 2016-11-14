@@ -1,4 +1,5 @@
 _              = require 'lodash'
+Redis          = require 'ioredis'
 MeshbluConfig  = require 'meshblu-config'
 FetchPublicKey = require 'fetch-meshblu-public-key'
 SigtermHandler = require 'sigterm-handler'
