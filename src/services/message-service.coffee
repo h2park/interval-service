@@ -5,9 +5,10 @@ debug    = require('debug')('interval-service:message-service')
 overview = require('debug')('interval-service:message-service:overview')
 
 class MessageService
-  constructor: ({database}) ->
-    throw new error 'IntervalService requires: database' unless database?
-    @collection = database.collection 'soldiers'
+  constructor: ({database, @client}) ->
+    throw new error 'MessageService: requires database' unless database?
+    throw new error 'MessageService: requires client' unless @client?
+    @collection       = database.collection 'soldiers'
     @legacyCollection = database.collection 'intervals'
 
   subscribe: (params={}, callback) =>
@@ -18,7 +19,9 @@ class MessageService
       return callback @_userError('noUnsubscribe should also set fireOnce', 422)
     if !params.cronString and params.intervalTime < 1000
       return callback @_userError('intervalTime must be at least 1000ms', 422)
-    @_storeJobInMongo params, callback
+    @_storeJobInMongo params, (error) =>
+      return callback error if error?
+      @_deactivateLegacy params, callback
 
   unsubscribe: (params={}, callback) =>
     debug 'unsubscribe', JSON.stringify params
@@ -30,6 +33,13 @@ class MessageService
     fireOnce = data.fireOnce || false
     return @_cloneJob(data, callback) if fireOnce
     return @_updateJob(data, callback)
+
+  _deactivateLegacy: ({ sendTo, nodeId, transactionId }, callback) =>
+    redisNodeId = transactionId ? nodeId
+    @client.del "interval/active/#{sendTo}/#{redisNodeId}", (error) =>
+      return callback error if error?
+      callback null
+    return # redis promise fix
 
   _cloneJob: (data, callback) =>
     @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>

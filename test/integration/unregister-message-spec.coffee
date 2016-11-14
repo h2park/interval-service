@@ -9,6 +9,10 @@ describe 'Unregister Message', ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
 
+    @fakeRedisClient = {
+      del: sinon.stub()
+    }
+
     serverOptions =
       port: undefined,
       disableLogging: true
@@ -18,6 +22,7 @@ describe 'Unregister Message', ->
         protocol: 'http'
       publicKey:
         publicKey: null
+      client: @fakeRedisClient
       mongodbUri: 'localhost'
       intervalServiceUri: 'http://interval-service.octoblu.test'
 
@@ -73,7 +78,7 @@ describe 'Unregister Message', ->
 
         request.post options, (error, @response, @body) =>
           done error
-
+          
       it 'should return a 204', ->
         expect(@response.statusCode).to.equal 204
 

@@ -17,6 +17,7 @@ describe 'Delete Interval', ->
         port: 0xd00d
         protocol: 'http'
       mongodbUri: 'interval-service-test'
+      client: {}
       publicKey:
         publicKey: null
       intervalServiceUri: 'http://interval-service.octoblu.test'

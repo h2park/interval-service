@@ -20,6 +20,7 @@ describe 'Create Interval', ->
         uuid: 'the-interval-service-uuid'
         uuid: 'the-interval-service-token'
       mongodbUri: 'interval-service-test'
+      client: {}
       publicKey:
         publicKey: null
       intervalServiceUri: 'http://interval-service.octoblu.test'

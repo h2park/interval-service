@@ -10,6 +10,10 @@ describe 'Legacy Fire Once Register Message', ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
 
+    @fakeRedisClient = {
+      del: sinon.stub()
+    }
+
     serverOptions =
       port: undefined,
       disableLogging: true
@@ -17,6 +21,7 @@ describe 'Legacy Fire Once Register Message', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
+      client: @fakeRedisClient
       publicKey:
         publicKey: null
       mongodbUri: 'interval-service-test'
@@ -64,6 +69,7 @@ describe 'Legacy Fire Once Register Message', ->
           .set 'Authorization', "Basic #{userAuth}"
           .reply 200, uuid: 'some-uuid', token: 'some-token'
 
+        @fakeRedisClient.del.yields null
         options =
           uri: '/message'
           baseUrl: "http://localhost:#{@serverPort}"
@@ -90,6 +96,9 @@ describe 'Legacy Fire Once Register Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
+
+      it 'should deactivate any old intervals', ->
+        expect(@fakeRedisClient.del).to.have.been.calledWith 'interval/active/some-flow-uuid/some-transaction-id'
 
       it 'should save the job data to mongo', (done) ->
         query =
@@ -134,6 +143,8 @@ describe 'Legacy Fire Once Register Message', ->
           .set 'Authorization', "Basic #{userAuth}"
           .reply 200, uuid: 'some-uuid', token: 'some-token'
 
+        @fakeRedisClient.del.yields null
+        
         options =
           uri: '/message'
           baseUrl: "http://localhost:#{@serverPort}"
@@ -160,6 +171,9 @@ describe 'Legacy Fire Once Register Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
+
+      it 'should deactivate any old intervals', ->
+        expect(@fakeRedisClient.del).to.have.been.calledWith 'interval/active/some-flow-uuid/some-transaction-id'
 
       it 'should save the job data to mongo', (done) ->
         query =

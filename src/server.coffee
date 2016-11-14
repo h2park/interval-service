@@ -1,3 +1,4 @@
+_                  = require 'lodash'
 mongojs            = require 'mongojs'
 enableDestroy      = require 'server-destroy'
 octobluExpress     = require 'express-octoblu'
@@ -18,16 +19,19 @@ class Server
       @mongodbUri
       @intervalServiceUri
       @publicKey
+      @client
     } = options
     throw new Error 'Server requires: publicKey' unless @publicKey?
     throw new Error 'Server requires: meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
     throw new Error 'Server requires: intervalServiceUri' unless @intervalServiceUri?
+    throw new Error 'Server requires: client' unless @client?
 
   address: =>
     @server.address()
 
   run: (callback) =>
+    callback = _.once callback
     app = octobluExpress { @disableLogging, @logFn }
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
@@ -40,13 +44,16 @@ class Server
 
     database = mongojs @mongodbUri, ['soldiers']
     intervalService = new IntervalService {@meshbluConfig, database, @intervalServiceUri}
-    messageService = new MessageService {@meshbluConfig, database}
+    messageService = new MessageService {database, @client}
     router = new Router {@meshbluConfig, intervalService, messageService}
-
     router.route app
 
     @server = app.listen @port, callback
     enableDestroy @server
+
+  die: (error) =>
+    console.error error.stack
+    process.exit 1
 
   stop: (callback) =>
     @server.close callback
