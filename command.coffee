@@ -7,14 +7,12 @@ Server         = require './src/server'
 
 class Command
   constructor: ->
-    @serverOptions =
-      meshbluConfig:      new MeshbluConfig().toJSON()
-      mongodbUri:         process.env.MONGODB_URI
-      port:               process.env.PORT || 80
-      disableLogging:     process.env.DISABLE_LOGGING == "true"
-      intervalServiceUri: process.env.INTERVAL_SERVICE_URI
-      redisUri:           process.env.REDIS_URI
-      publicKeyUri:       process.env.MESHBLU_PUBLIC_KEY_URI
+    @intervalServiceUri = process.env.INTERVAL_SERVICE_URI
+    @mongodbUri         = process.env.MONGODB_URI
+    @redisUri           = process.env.REDIS_URI
+    @publicKeyUri       = process.env.MESHBLU_PUBLIC_KEY_URI
+    @meshbluConfig      = new MeshbluConfig().toJSON()
+    @port               = process.env.PORT || 80
 
   panic: (error) =>
     console.error error.stack
@@ -29,21 +27,28 @@ class Command
       callback null, client
 
   getPublicKey: (callback) =>
-    new FetchPublicKey().fetch @serverOptions.publicKeyUri, callback
+    new FetchPublicKey().fetch @publicKeyUri, callback
 
   run: =>
-    @panic new Error('Missing required environment variable: MESHBLU_PUBLIC_KEY_URI') if _.isEmpty @serverOptions.publicKeyUri
-    @panic new Error('Missing required environment variable: MONGODB_URI') if _.isEmpty @serverOptions.mongodbUri
-    @panic new Error('Missing required environment variable: REDIS_URI') if _.isEmpty @serverOptions.redisUri
-    @panic new Error('Missing required environment variable: INTERVAL_SERVICE_URI') if _.isEmpty @serverOptions.intervalServiceUri
+    @panic new Error('Missing required environment variable: MESHBLU_PUBLIC_KEY_URI') if _.isEmpty @publicKeyUri
+    @panic new Error('Missing required environment variable: MONGODB_URI') if _.isEmpty @mongodbUri
+    @panic new Error('Missing required environment variable: REDIS_URI') if _.isEmpty @redisUri
+    @panic new Error('Missing required environment variable: INTERVAL_SERVICE_URI') if _.isEmpty @intervalServiceUri
+    @panic new Error('Missing required variable: meshbluConfig') if _.isEmpty @meshbluConfig
+    @panic new Error('Missing required variable: port') if _.isEmpty @port
 
     @getPublicKey (error, publicKey) =>
       return @panic error if error?
-      @serverOptions.publicKey = publicKey
       @getRedisClient (error, client) =>
         return @panic error if error?
-        @serverOptions.client = client
-        server = new Server @serverOptions
+        server = new Server {
+          publicKey,
+          client,
+          @meshbluConfig,
+          @port,
+          @intervalServiceUri,
+          @mongodbUri,
+        }
         server.run (error) =>
           return @panic error if error?
           {address,port} = server.address()
