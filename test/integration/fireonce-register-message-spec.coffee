@@ -47,14 +47,14 @@ describe 'Fire Once Register Message', ->
       beforeEach (done) ->
         record =
           metadata:
-            ownerUuid: 'some-flow-uuid'
-            nodeId: 'some-interval-node'
+            ownerUuid   : 'some-flow-uuid'
+            nodeId      : 'some-interval-node'
             intervalUuid: 'interval-device-uuid'
+            credentialsOnly: true
           data:
             uuid: 'interval-device-uuid'
             token: 'interval-device-token'
             nodeId: 'some-interval-node'
-            fireOnce: false
         @datastore.insert record, done
 
       beforeEach (done) ->
@@ -79,7 +79,7 @@ describe 'Fire Once Register Message', ->
               nodeId: 'some-interval-node'
               transactionId: 'some-transaction-id'
               sendTo: 'some-flow-uuid'
-              nonce: 'this-is-nonce-ence'
+              nonce: 'this-is-nonce-once'
               intervalTime: 10000
               fireOnce: true
 
@@ -93,13 +93,32 @@ describe 'Fire Once Register Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-      it 'should deactivate any old intervals', ->
-        expect(@fakeRedisClient.del).to.have.been.calledWith 'interval/active/some-flow-uuid/some-transaction-id'
+      it 'should keep the main record in mongo', (done) ->
+        query =
+          'metadata.ownerUuid': 'some-flow-uuid'
+          'metadata.nodeId'   : 'some-interval-node'
+          'metadata.credentialsOnly': true
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expectedRecord =
+            metadata:
+              ownerUuid   : 'some-flow-uuid'
+              intervalUuid: 'interval-device-uuid'
+              nodeId      : 'some-interval-node'
+              credentialsOnly: true
+            data:
+              uuid: 'interval-device-uuid'
+              token: 'interval-device-token'
+              nodeId: 'some-interval-node'
+          expect(record).to.deep.equal expectedRecord
+          done()
 
-      it 'should save the job data to mongo', (done) ->
+      it 'should keep the transaction record in mongo', (done) ->
         query =
           'metadata.ownerUuid'    : 'some-flow-uuid'
+          'metadata.nodeId'       : 'some-interval-node'
           'metadata.transactionId': 'some-transaction-id'
+          'metadata.credentialsOnly': false
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expectedRecord =
@@ -108,10 +127,12 @@ describe 'Fire Once Register Message', ->
               transactionId: 'some-transaction-id'
               intervalUuid: 'interval-device-uuid'
               intervalTime: 10000
-              nonce: 'this-is-nonce-ence'
+              nodeId: 'some-interval-node'
+              nonce: 'this-is-nonce-once'
               processAt: @processAt
               processNow: true
               fireOnce: true
+              credentialsOnly: false
             data:
               fireOnce: true
               uuid: 'interval-device-uuid'

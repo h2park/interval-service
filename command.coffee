@@ -9,7 +9,6 @@ class Command
   constructor: ->
     @intervalServiceUri = process.env.INTERVAL_SERVICE_URI
     @mongodbUri         = process.env.MONGODB_URI
-    @redisUri           = process.env.REDIS_URI
     @publicKeyUri       = process.env.MESHBLU_PUBLIC_KEY_URI
     @meshbluConfig      = new MeshbluConfig().toJSON()
     @port               = process.env.PORT || 80
@@ -17,14 +16,6 @@ class Command
   panic: (error) =>
     console.error error.stack
     process.exit 1
-
-  getRedisClient: (callback) =>
-    client = new Redis @redisUri, dropBufferSupport: true
-    client = _.bindAll client, _.functionsIn(client)
-    client.once 'error', callback
-    client.on 'ready', =>
-      client.on 'error', @panic
-      callback null, client
 
   getPublicKey: (callback) =>
     new FetchPublicKey().fetch @publicKeyUri, callback
@@ -39,22 +30,19 @@ class Command
 
     @getPublicKey (error, publicKey) =>
       return @panic error if error?
-      @getRedisClient (error, client) =>
+      server = new Server {
+        publicKey,
+        @meshbluConfig,
+        @port,
+        @intervalServiceUri,
+        @mongodbUri,
+      }
+      server.run (error) =>
         return @panic error if error?
-        server = new Server {
-          publicKey,
-          client,
-          @meshbluConfig,
-          @port,
-          @intervalServiceUri,
-          @mongodbUri,
-        }
-        server.run (error) =>
-          return @panic error if error?
-          {address,port} = server.address()
-          console.log "IntervalService listening on port: #{port}"
-        sigtermHandler = new SigtermHandler
-        sigtermHandler.register server.run
+        {address,port} = server.address()
+        console.log "IntervalService listening on port: #{port}"
+      sigtermHandler = new SigtermHandler
+      sigtermHandler.register server.run
 
 command = new Command()
 command.run()

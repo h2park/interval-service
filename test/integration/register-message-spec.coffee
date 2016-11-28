@@ -10,10 +10,6 @@ describe 'Register Message', ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
 
-    @fakeRedisClient = {
-      del: sinon.stub()
-    }
-
     serverOptions =
       port: undefined,
       disableLogging: true
@@ -21,7 +17,6 @@ describe 'Register Message', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
-      client: @fakeRedisClient
       publicKey:
         publicKey: null
       mongodbUri: 'interval-service-test'
@@ -51,6 +46,7 @@ describe 'Register Message', ->
               ownerUuid: 'some-flow-uuid'
               nodeId: 'some-interval-node'
               intervalUuid: 'interval-device-uuid'
+              credentialsOnly: true
             data:
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'
@@ -64,8 +60,6 @@ describe 'Register Message', ->
             .post '/authenticate'
             .set 'Authorization', "Basic #{userAuth}"
             .reply 200, uuid: 'some-uuid', token: 'some-token'
-
-          @fakeRedisClient.del.yields null
 
           options =
             uri: '/message'
@@ -92,13 +86,11 @@ describe 'Register Message', ->
         it 'should auth handler', ->
           @authDevice.done()
 
-        it 'should deactivate any old intervals', ->
-          expect(@fakeRedisClient.del).to.have.been.calledWith 'interval/active/some-flow-uuid/some-interval-node'
-
         it 'should save the job data to mongo', (done) ->
           query =
             'metadata.ownerUuid': 'some-flow-uuid'
             'metadata.nodeId': 'some-interval-node'
+            'metadata.credentialsOnly': false
           @datastore.findOne query, {_id: false}, (error, record) =>
             return done error if error?
             expectedRecord =
@@ -111,6 +103,7 @@ describe 'Register Message', ->
                 processAt: @processAt
                 processNow: true
                 fireOnce: false
+                credentialsOnly: false
               data:
                 fireOnce: false
                 uuid: 'interval-device-uuid'
@@ -126,6 +119,7 @@ describe 'Register Message', ->
           metadata:
             ownerUuid: 'some-flow-uuid'
             nodeId: 'some-cron-node'
+            credentialsOnly: true
             intervalUuid: 'interval-device-uuid'
           data:
             uuid: 'interval-device-uuid'
@@ -140,8 +134,6 @@ describe 'Register Message', ->
           .post '/authenticate'
           .set 'Authorization', "Basic #{userAuth}"
           .reply 200, uuid: 'some-uuid', token: 'some-token'
-
-        @fakeRedisClient.del.yields null
 
         options =
           uri: '/message'
@@ -167,13 +159,11 @@ describe 'Register Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-      it 'should deactivate any old intervals', ->
-        expect(@fakeRedisClient.del).to.have.been.calledWith 'interval/active/some-flow-uuid/some-cron-node'
-
       it 'should save the job data to mongo', (done) ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
           'metadata.nodeId': 'some-cron-node'
+          'metadata.credentialsOnly': false
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expectedRecord =
@@ -185,6 +175,7 @@ describe 'Register Message', ->
               processAt: @processAt
               processNow: true
               fireOnce: false
+              credentialsOnly: false
             data:
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'

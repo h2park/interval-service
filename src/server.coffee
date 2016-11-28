@@ -19,13 +19,11 @@ class Server
       @mongodbUri
       @intervalServiceUri
       @publicKey
-      @client
     } = options
     throw new Error 'Server requires: publicKey' unless @publicKey?
     throw new Error 'Server requires: meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server requires: mongodbUri' unless @mongodbUri?
     throw new Error 'Server requires: intervalServiceUri' unless @intervalServiceUri?
-    throw new Error 'Server requires: client' unless @client?
 
   address: =>
     @server.address()
@@ -44,7 +42,7 @@ class Server
 
     database = mongojs @mongodbUri, ['soldiers']
     intervalService = new IntervalService {@meshbluConfig, database, @intervalServiceUri}
-    messageService = new MessageService {database, @client}
+    messageService = new MessageService {database}
     router = new Router {@meshbluConfig, intervalService, messageService}
     router.route app
 

@@ -18,7 +18,7 @@ describe 'Create Interval', ->
         port: 0xd00d
         protocol: 'http'
         uuid: 'the-interval-service-uuid'
-        uuid: 'the-interval-service-token'
+        token: 'the-interval-service-token'
       mongodbUri: 'interval-service-test'
       client: {}
       publicKey:
@@ -101,4 +101,5 @@ describe 'Create Interval', ->
             nodeId: 'node-uuid'
             intervalUuid: 'interval-uuid'
             ownerUuid: 'some-uuid'
+            credentialsOnly: true
         done()

@@ -56,12 +56,14 @@ class IntervalService
               'metadata.ownerUuid': ownerUuid
               'metadata.intervalUuid': intervalUuid
               'metadata.nodeId': nodeId
+              'metadata.credentialsOnly': true
               'data.uuid': intervalUuid
               'data.token': intervalToken
               'data.nodeId': nodeId
             query =
               'metadata.ownerUuid': ownerUuid
               'metadata.nodeId': nodeId
+              'metadata.credentialsOnly': true
             @collection.update query, {$set: update}, {upsert: true}, (error) =>
               return callback error if error?
               callback null, device
