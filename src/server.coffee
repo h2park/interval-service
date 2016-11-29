@@ -34,10 +34,17 @@ class Server
 
     meshbluAuth = new MeshbluAuth @meshbluConfig
     app.use httpSignature.verify pub: @publicKey.publicKey
-    app.use meshbluAuth.auth()
 
     app.use (req, res, next) =>
       return httpSignature.gateway()(req, res, next) if req.signature?.verified == true
+      next()
+
+    app.use (req, res, next) =>
+      return next() if req.signature?.verified == true
+      meshbluAuth.auth()(req, res, next)
+
+    app.use (req, res, next) =>
+      return next() if req.signature?.verified == true
       meshbluAuth.gateway()(req, res, next)
 
     database = mongojs @mongodbUri, ['soldiers']

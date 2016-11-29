@@ -49,6 +49,20 @@ describe 'Unregister Message', ->
             ownerUuid: 'some-flow-uuid'
             nodeId: 'some-interval-node'
             intervalUuid: 'interval-device-uuid'
+            credentialsOnly: true
+          data:
+            uuid: 'interval-device-uuid'
+            token: 'interval-device-token'
+            nodeId: 'some-interval-node'
+        @datastore.insert record, done
+
+      beforeEach (done) ->
+        record =
+          metadata:
+            ownerUuid: 'some-flow-uuid'
+            nodeId: 'some-interval-node'
+            intervalUuid: 'interval-device-uuid'
+            credentialsOnly: false
           data:
             uuid: 'interval-device-uuid'
             token: 'interval-device-token'
@@ -89,83 +103,17 @@ describe 'Unregister Message', ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
           'metadata.nodeId': 'some-interval-node'
+          'metadata.credentialsOnly': false
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expect(record).to.not.exist
           done()
 
-    describe 'with topic of unregister-interval and it has a fireOnce', ->
-      beforeEach (done) ->
-        record =
-          metadata:
-            ownerUuid: 'some-flow-uuid'
-            nodeId: 'some-interval-node'
-            intervalUuid: 'interval-device-uuid'
-          data:
-            uuid: 'interval-device-uuid'
-            token: 'interval-device-token'
-            nodeId: 'some-interval-node'
-        @datastore.insert record, done
-
-      beforeEach (done) ->
-        record =
-          metadata:
-            ownerUuid: 'some-flow-uuid'
-            nodeId: 'some-interval-node'
-            transactionId: 'some-transaction-id'
-            intervalUuid: 'interval-device-uuid'
-          data:
-            uuid: 'interval-device-uuid'
-            token: 'interval-device-token'
-            nodeId: 'some-interval-node'
-            transactionId: 'some-transaction-id'
-        @datastore.insert record, done
-
-      beforeEach (done) ->
-        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
-
-        @authDevice = @meshblu
-          .post '/authenticate'
-          .set 'Authorization', "Basic #{userAuth}"
-          .reply 200, uuid: 'some-uuid', token: 'some-token'
-
-        options =
-          uri: '/message'
-          baseUrl: "http://localhost:#{@serverPort}"
-          auth:
-            username: 'some-uuid'
-            password: 'some-token'
-          json: true
-          body:
-            topic: 'unregister-interval'
-            payload:
-              nodeId: 'some-interval-node'
-              transactionId: 'some-transaction-id'
-              sendTo: 'some-flow-uuid'
-
-        request.post options, (error, @response, @body) =>
-          done error
-
-      it 'should return a 204', ->
-        expect(@response.statusCode).to.equal 204
-
-      it 'should auth handler', ->
-        @authDevice.done()
-
-      it 'should remove the transaction job data from mongo', (done) ->
+      it 'should not remove the credentialsOnly job data from mongo', (done) ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
           'metadata.nodeId': 'some-interval-node'
-          'metadata.transactionId': 'some-transaction-id'
-        @datastore.findOne query, {_id: false}, (error, record) =>
-          return done error if error?
-          expect(record).to.not.exist
-          done()
-
-      it 'should not remove the base job data from mongo', (done) ->
-        query =
-          'metadata.ownerUuid': 'some-flow-uuid'
-          'metadata.nodeId': 'some-interval-node'
+          'metadata.credentialsOnly': true
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expect(record).to.exist
@@ -201,12 +149,3 @@ describe 'Unregister Message', ->
 
       it 'should auth handler', ->
         @authDevice.done()
-
-      it 'should remove the job data to mongo', (done) ->
-        query =
-          'metadata.ownerUuid': 'some-flow-uuid'
-          'metadata.nodeId': 'some-cron-node'
-        @datastore.findOne query, {_id: false}, (error, record) =>
-          return done error if error?
-          expect(record).to.not.exist
-          done()

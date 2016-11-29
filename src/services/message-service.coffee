@@ -91,11 +91,9 @@ class MessageService
 
     query = {}
     query['metadata.ownerUuid'] = sendTo
-    if transactionId?
-      query['metadata.transactionId'] = transactionId
-      query['metadata.nodeId'] = nodeId
-    else
-      query['metadata.nodeId'] = nodeId
+    query['metadata.transactionId'] = transactionId if transactionId?
+    query['metadata.nodeId'] = nodeId
+    query['metadata.credentialsOnly'] = false
     @collection.remove query, callback
 
   _userError: (message, code) =>

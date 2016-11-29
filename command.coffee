@@ -41,7 +41,7 @@ class Command
         {address,port} = server.address()
         console.log "IntervalService listening on port: #{port}"
       sigtermHandler = new SigtermHandler
-      sigtermHandler.register server.run
+      sigtermHandler.register server.stop
 
 command = new Command()
 command.run()
