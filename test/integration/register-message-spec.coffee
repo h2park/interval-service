@@ -100,7 +100,7 @@ describe 'Register Message', ->
                 intervalUuid: 'interval-device-uuid'
                 intervalTime: 10000
                 nonce: 'this-is-nonce-ence'
-                processAt: @processAt
+                lastRunAt: @processAt
                 processNow: true
                 fireOnce: false
                 credentialsOnly: false
@@ -172,7 +172,7 @@ describe 'Register Message', ->
               nodeId: 'some-cron-node'
               intervalUuid: 'interval-device-uuid'
               cronString: 'some-cron-string'
-              processAt: @processAt
+              lastRunAt: @processAt
               processNow: true
               fireOnce: false
               credentialsOnly: false

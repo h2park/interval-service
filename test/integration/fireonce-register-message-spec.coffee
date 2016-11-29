@@ -129,7 +129,7 @@ describe 'Fire Once Register Message', ->
               intervalTime: 10000
               nodeId: 'some-interval-node'
               nonce: 'this-is-nonce-once'
-              processAt: @processAt
+              lastRunAt: @processAt
               processNow: true
               fireOnce: true
               credentialsOnly: false

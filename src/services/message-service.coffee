@@ -42,8 +42,7 @@ class MessageService
     query['metadata.credentialsOnly'] = true
     return query
 
-  _cloneJobRecord: (job={}, data) =>
-    job = _.cloneDeep(job)
+  _cloneJobRecord: (job, data) =>
     {
       sendTo,
       intervalTime,
@@ -53,37 +52,34 @@ class MessageService
       nonce,
       cronString,
     } = data
-    transactionId = uuid.v1() if fireOnce and !transactionId?
-    job.data ?= {}
-    job.data.nodeId = nodeId
-    job.data.sendTo = sendTo
-    job.data.transactionId = transactionId if transactionId?
-    job.data.fireOnce = fireOnce || false
-    job.metadata ?= {}
-    job.metadata.transactionId = transactionId if transactionId?
-    job.metadata.nonce = nonce if nonce?
-    job.metadata.intervalTime = parseInt(intervalTime) if intervalTime?
-    job.metadata.cronString = cronString if cronString?
-    job.metadata.processAt = moment().unix()
-    job.metadata.processNow = true
-    job.metadata.fireOnce = fireOnce || false
-    job.metadata.credentialsOnly = false
-    return job
+    fireOnce ?= false
+    defaults = {
+      metadata: {
+        transactionId,
+        nonce,
+        intervalTime,
+        cronString,
+        fireOnce,
+        processNow: true,
+        lastRunAt: moment().unix(),
+        credentialsOnly: false
+      },
+      data: {
+        nodeId,
+        sendTo,
+        transactionId,
+        fireOnce
+      }
+    }
+    return JSON.parse JSON.stringify _.defaultsDeep(defaults, job)
 
-  _removeClonedJob: (data, callback) =>
-    {
-      sendTo,
-      nodeId,
-      transactionId,
-      fireOnce
-    } = data
-
+  _removeClonedJob: ({ sendTo, nodeId, transactionId }, callback) =>
     query = {}
     query['metadata.ownerUuid'] = sendTo
-    query['metadata.transactionId'] = transactionId if transactionId?
     query['metadata.nodeId'] = nodeId
+    query['metadata.transactionId'] = transactionId if transactionId?
     query['metadata.credentialsOnly'] = false
-    @collection.remove query, callback
+    @collection.remove query, {multi:true}, callback
 
   _userError: (message, code) =>
     error = new Error message
