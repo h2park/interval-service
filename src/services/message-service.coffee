@@ -18,19 +18,13 @@ class MessageService
       return callback @_userError('noUnsubscribe should also set fireOnce', 422)
     if !params.cronString and params.intervalTime < 1000
       return callback @_userError('intervalTime must be at least 1000ms', 422)
-    @_storeJobInMongo params, callback
+    @_cloneJob params, callback
 
   unsubscribe: (params={}, callback) =>
     debug 'unsubscribe', JSON.stringify params
     unless params.sendTo? and params.nodeId?
       return callback @_userError('nodeId or sendTo not defined', 422)
-    @_removeJobInMongo params, callback
-
-  _storeJobInMongo: (data, callback) =>
-    fireOnce = data.fireOnce || false
-    @_updateJob data, (error) =>
-      return callback error if error?
-      @_cloneJob data, callback
+    @_removeClonedJob params, callback
 
   _cloneJob: (data, callback) =>
     @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>
@@ -47,11 +41,6 @@ class MessageService
     query['metadata.nodeId'] = nodeId
     query['metadata.credentialsOnly'] = true
     return query
-
-  _getUpdateQuery: (data) =>
-    update = {}
-    update['metadata.credentialsOnly'] = true
-    return { $set: update }
 
   _cloneJobRecord: (job={}, data) =>
     job = _.cloneDeep(job)
@@ -81,7 +70,7 @@ class MessageService
     job.metadata.credentialsOnly = false
     return job
 
-  _removeJobInMongo: (data, callback) =>
+  _removeClonedJob: (data, callback) =>
     {
       sendTo,
       nodeId,
