@@ -35,6 +35,7 @@ class MessageController
     debug 'register', JSON.stringify payload
     params = _.merge {}, payload, { sendTo: fromUuid }
     @messageService.subscribe params, (error) =>
+      debug 'registered', { params, error }
       return response.sendError(error) if error?
       response.sendStatus(201)
 
@@ -43,6 +44,7 @@ class MessageController
     debug 'unregister', JSON.stringify payload
     params = _.merge {}, payload, { sendTo: fromUuid }
     @messageService.unsubscribe params, (error) =>
+      debug 'unregistered', { params, error }
       return response.sendError(error) if error?
       response.sendStatus(204)
 

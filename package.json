@@ -1,6 +1,6 @@
 {
   "name": "interval-service",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "service for creating timed jobs",
   "keywords": [],
   "homepage": "https://github.com/octoblu/interval-service",

@@ -35,7 +35,7 @@ class MessageService
   _cloneJob: (data, callback) =>
     @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>
       return callback error if error?
-      return callback new Error "Missing credentials" unless job?
+      return callback @_userError("Missing credentials", 412) unless job?
       @collection.insert @_cloneJobRecord(job, data), callback
 
   _updateJob: (data, callback) =>
