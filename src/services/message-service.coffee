@@ -27,17 +27,17 @@ class MessageService
     @_removeInstances params, callback
 
   _upsertInstance: (data, callback) =>
-    @_removeInstances data, (error) =>
+    @_getCredentials data, (error, credentials) =>
       return callback error if error?
-      @_getCredentials data, (error, credentials) =>
+      clonedRecord = @_cloneCredentialsRecord(data, credentials)
+      clonedRecord['uuid'] = uuid.v1()
+      update  = { $set: clonedRecord }
+      query   = @_getInstancesQuery(data)
+      options = { upsert:true }
+      # Upsert to reduce the chance of race condition
+      @collection.update query, update, options, (error, result) =>
         return callback error if error?
-        update  = { $set: @_cloneCredentialsRecord(data, credentials) }
-        query   = @_getInstancesQuery(data)
-        options = { multi:true, upsert:true }
-        # Upsert to reduce the chance of race condition
-        @collection.update query, update, options, (error, result) =>
-          return callback error if error?
-          callback null
+        callback null
 
   _getCredentials: ({ sendTo, nodeId }, callback) =>
     query =

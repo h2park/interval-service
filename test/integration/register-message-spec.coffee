@@ -110,7 +110,9 @@ describe 'Register Message', ->
                 token: 'interval-device-token'
                 nodeId: 'some-interval-node'
                 sendTo: 'some-flow-uuid'
-            expect(record).to.deep.equal expectedRecord
+            expect(record.uuid).to.exist
+            expect(record.metadata).to.deep.equal expectedRecord.metadata
+            expect(record.data).to.deep.equal expectedRecord.data
             done()
 
     describe 'with topic of register-cron', ->
@@ -182,5 +184,7 @@ describe 'Register Message', ->
               nodeId: 'some-cron-node'
               sendTo: 'some-flow-uuid'
               fireOnce: false
-          expect(record).to.deep.equal expectedRecord
+          expect(record.uuid).to.exist
+          expect(record.metadata).to.deep.equal expectedRecord.metadata
+          expect(record.data).to.deep.equal expectedRecord.data
           done()
