@@ -18,36 +18,38 @@ class MessageService
       return callback @_userError('noUnsubscribe should also set fireOnce', 422)
     if !params.cronString and params.intervalTime < 1000
       return callback @_userError('intervalTime must be at least 1000ms', 422)
-    @_removeAndClone params, callback
+    @_upsertInstance params, callback
 
   unsubscribe: (params={}, callback) =>
     debug 'unsubscribe', JSON.stringify params
     unless params.sendTo? and params.nodeId?
       return callback @_userError('nodeId or sendTo not defined', 422)
-    @_removeClonedJobs params, callback
+    @_removeInstances params, callback
 
-  _removeAndClone: (data, callback) =>
-    @_removeClonedJobs data, (error) =>
+  _upsertInstance: (data, callback) =>
+    @_removeInstances data, (error) =>
       return callback error if error?
-      @_cloneJob data, callback
+      @_getCredentials data, (error, credentials) =>
+        return callback error if error?
+        update  = { $set: @_cloneCredentialsRecord(data, credentials) }
+        query   = @_getInstancesQuery(data)
+        options = { multi:true, upsert:true }
+        # Upsert to reduce the chance of race condition
+        @collection.update query, update, options, (error, result) =>
+          return callback error if error?
+          callback null
 
-  _cloneJob: (data, callback) =>
-    @collection.findOne @_getQuery(data), {_id: false}, (error, job) =>
+  _getCredentials: ({ sendTo, nodeId }, callback) =>
+    query =
+      'metadata.ownerUuid'      : sendTo
+      'metadata.nodeId'         : nodeId
+      'metadata.credentialsOnly': true
+    @collection.findOne query, {_id: false}, (error, credentials) =>
       return callback error if error?
-      return callback @_userError("Missing credentials", 412) unless job?
-      @collection.insert @_cloneJobRecord(job, data), callback
+      return callback @_userError("Missing credentials", 412) unless credentials?
+      callback null, credentials
 
-  _updateJob: (data, callback) =>
-    @collection.update @_getQuery(data), @_getUpdateQuery(data), callback
-
-  _getQuery: ({ sendTo, nodeId }) =>
-    query = {}
-    query['metadata.ownerUuid'] = sendTo
-    query['metadata.nodeId'] = nodeId
-    query['metadata.credentialsOnly'] = true
-    return query
-
-  _cloneJobRecord: (job, data) =>
+  _cloneCredentialsRecord: (data, credentials) =>
     {
       sendTo,
       intervalTime,
@@ -76,15 +78,18 @@ class MessageService
         fireOnce
       }
     }
-    return JSON.parse JSON.stringify _.defaultsDeep(defaults, job)
+    return JSON.parse JSON.stringify _.defaultsDeep(defaults, credentials)
 
-  _removeClonedJobs: ({ sendTo, nodeId, transactionId }, callback) =>
+  _removeInstances: (data, callback) =>
+    @collection.remove @_getInstancesQuery(data), {multi:true}, callback
+
+  _getInstancesQuery: ({ sendTo, nodeId, transactionId }) =>
     query = {}
     query['metadata.ownerUuid'] = sendTo
     query['metadata.nodeId'] = nodeId
     query['metadata.transactionId'] = transactionId if transactionId?
     query['metadata.credentialsOnly'] = false
-    @collection.remove query, {multi:true}, callback
+    return query
 
   _userError: (message, code) =>
     error = new Error message
