@@ -1,6 +1,7 @@
 _           = require 'lodash'
 async       = require 'async'
 MeshbluHttp = require 'meshblu-http'
+uuid        = require 'uuid'
 debug       = require('debug')('interval-service:interval-service')
 
 class IntervalService
@@ -53,6 +54,7 @@ class IntervalService
           .createSubscription options, (error) =>
             return callback error if error?
             update =
+              'uuid': uuid.v1()
               'metadata.ownerUuid': ownerUuid
               'metadata.intervalUuid': intervalUuid
               'metadata.nodeId': nodeId
@@ -70,9 +72,13 @@ class IntervalService
               callback null, device
 
   destroy: ({uuid, token, nodeId, intervalUuid}, callback) =>
-    @_getMeshbluHttp({uuid, token}).unregister { uuid: intervalUuid }, (error) =>
-      return callback error if error?
-      @collection.remove {'metadata.intervalUuid': intervalUuid}, callback
+    @_getMeshbluHttp({ uuid, token })
+      .unregister { uuid: intervalUuid }, (error) =>
+        return callback error if error?
+        query = {
+          'metadata.intervalUuid': intervalUuid
+        }
+        @collection.remove query, callback
 
   _getMeshbluHttp: ({ uuid, token }) =>
     return new MeshbluHttp _.defaults {uuid, token}, @meshbluConfig

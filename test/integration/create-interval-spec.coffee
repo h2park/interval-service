@@ -41,58 +41,81 @@ describe 'Create Interval', ->
     @datastore = @db.soldiers
 
   describe 'On POST /nodes/:nodeId/intervals', ->
-    beforeEach (done) ->
-      userAuth = new Buffer('some-uuid:some-token').toString 'base64'
-      intervalAuth = new Buffer('interval-uuid:interval-token').toString 'base64'
+    describe 'when it does not exist', ->
+      beforeEach (done) ->
+        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+        intervalAuth = new Buffer('interval-uuid:interval-token').toString 'base64'
 
-      @authDevice = @meshblu
-        .post '/authenticate'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 200, uuid: 'some-uuid', token: 'some-token'
+        @authDevice = @meshblu
+          .post '/authenticate'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 200, uuid: 'some-uuid', token: 'some-token'
 
-      @registerDevice = @meshblu
-        .post '/devices'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 201, uuid: 'interval-uuid', token: 'interval-token'
+        @registerDevice = @meshblu
+          .post '/devices'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 201, uuid: 'interval-uuid', token: 'interval-token'
 
-      @subscribeDevice = @meshblu
-        .post '/v2/devices/interval-uuid/subscriptions/interval-uuid/message.received'
-        .set 'Authorization', "Basic #{intervalAuth}"
-        .reply 204
+        @subscribeDevice = @meshblu
+          .post '/v2/devices/interval-uuid/subscriptions/interval-uuid/message.received'
+          .set 'Authorization', "Basic #{intervalAuth}"
+          .reply 204
 
-      options =
-        uri: '/nodes/node-uuid/intervals'
-        baseUrl: "http://localhost:#{@serverPort}"
-        auth:
-          username: 'some-uuid'
-          password: 'some-token'
-        json: true
+        options =
+          uri: '/nodes/node-uuid/intervals'
+          baseUrl: "http://localhost:#{@serverPort}"
+          auth:
+            username: 'some-uuid'
+            password: 'some-token'
+          json: true
 
-      request.post options, (error, @response, @body) =>
-        done error
+        request.post options, (error, @response, @body) =>
+          done error
 
-    it 'should return a 200', ->
-      expect(@response.statusCode).to.equal 200
+      it 'should return a 200', ->
+        expect(@response.statusCode).to.equal 200
 
-    it 'should auth handler', ->
-      @authDevice.done()
+      it 'should auth handler', ->
+        @authDevice.done()
 
-    it 'should register handler', ->
-      @registerDevice.done()
+      it 'should register handler', ->
+        @registerDevice.done()
 
-    it 'should subscribe handler', ->
-      @subscribeDevice.done()
+      it 'should subscribe handler', ->
+        @subscribeDevice.done()
 
-    it 'should send back a uuid', ->
-      expect(@body.uuid).to.equal 'interval-uuid'
+      it 'should send back a uuid', ->
+        expect(@body.uuid).to.equal 'interval-uuid'
 
-    it 'should create the record in mongo', (done) ->
-      query =
-        'metadata.ownerUuid' : 'some-uuid'
-        'metadata.nodeId': 'node-uuid'
-      @datastore.findOne query, {_id: false}, (error, record) =>
-        return done error if error?
-        expect(record).to.deep.equal
+      it 'should only have one record in mongo', (done) ->
+        query =
+          'metadata.nodeId': 'node-uuid'
+        @datastore.count query, (error, count) =>
+          return done error if error?
+          expect(count).to.equal 1
+          done()
+
+      it 'should create the record in mongo', (done) ->
+        query =
+          'metadata.ownerUuid' : 'some-uuid'
+          'metadata.nodeId': 'node-uuid'
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expect(record.data).to.deep.equal
+            nodeId: 'node-uuid'
+            uuid: 'interval-uuid'
+            token: 'interval-token'
+          expect(record.metadata).to.deep.equal
+            nodeId: 'node-uuid'
+            intervalUuid: 'interval-uuid'
+            ownerUuid: 'some-uuid'
+            credentialsOnly: true
+          done()
+
+    describe 'when it already exists', ->
+      beforeEach (done) ->
+        record =
+          uuid: 'old-cred-uuid'
           data:
             nodeId: 'node-uuid'
             uuid: 'interval-uuid'
@@ -102,4 +125,76 @@ describe 'Create Interval', ->
             intervalUuid: 'interval-uuid'
             ownerUuid: 'some-uuid'
             credentialsOnly: true
-        done()
+        @datastore.insert record, done
+
+      beforeEach (done) ->
+        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+        intervalAuth = new Buffer('interval-uuid:interval-token').toString 'base64'
+
+        @authDevice = @meshblu
+          .post '/authenticate'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 200, uuid: 'some-uuid', token: 'some-token'
+
+        @registerDevice = @meshblu
+          .post '/devices'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 201, uuid: 'interval-uuid', token: 'interval-token'
+
+        @subscribeDevice = @meshblu
+          .post '/v2/devices/interval-uuid/subscriptions/interval-uuid/message.received'
+          .set 'Authorization', "Basic #{intervalAuth}"
+          .reply 204
+
+        options =
+          uri: '/nodes/node-uuid/intervals'
+          baseUrl: "http://localhost:#{@serverPort}"
+          auth:
+            username: 'some-uuid'
+            password: 'some-token'
+          json: true
+
+        request.post options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 200', ->
+        expect(@response.statusCode).to.equal 200
+
+      it 'should auth handler', ->
+        @authDevice.done()
+
+      it 'should register handler', ->
+        @registerDevice.done()
+
+      it 'should subscribe handler', ->
+        @subscribeDevice.done()
+
+      it 'should send back a uuid', ->
+        expect(@body.uuid).to.equal 'interval-uuid'
+
+      it 'should only have one record in mongo', (done) ->
+        query =
+          'metadata.nodeId': 'node-uuid'
+        @datastore.count query, (error, count) =>
+          return done error if error?
+          expect(count).to.equal 1
+          done()
+
+      it 'should create the record in mongo', (done) ->
+        query =
+          'metadata.ownerUuid' : 'some-uuid'
+          'metadata.nodeId': 'node-uuid'
+        @datastore.findOne query, {_id: false}, (error, record) =>
+          return done error if error?
+          expect(record.uuid).to.exist
+          expect(record.uuid).to.not.equal 'old-cred-uuid'
+          expect(record.data).to.deep.equal
+            nodeId: 'node-uuid'
+            uuid: 'interval-uuid'
+            token: 'interval-token'
+          expect(record.metadata).to.deep.equal
+            nodeId: 'node-uuid'
+            intervalUuid: 'interval-uuid'
+            ownerUuid: 'some-uuid'
+            credentialsOnly: true
+          done()

@@ -38,48 +38,181 @@ describe 'Delete Interval', ->
     @datastore = @db.soldiers
 
   describe 'On DELETE /nodes/:nodeId/destroy/:id', ->
-    beforeEach (done) ->
-      data =
-        ownerId: 'some-uuid'
-        nodeId: 'node-uuid'
-      @datastore.insert data, done
+    describe 'fresh test', ->
+      beforeEach (done) ->
+        data =
+          metadata:
+            ownerUuid: 'some-flow-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+        @datastore.insert data, done
 
-    beforeEach (done) ->
-      userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+      beforeEach (done) ->
+        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
 
-      @authDevice = @meshblu
-        .post '/authenticate'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 200, uuid: 'some-uuid', token: 'some-token'
+        @authDevice = @meshblu
+          .post '/authenticate'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 200, uuid: 'some-uuid', token: 'some-token'
 
-      @deleteDevice = @meshblu
-        .delete '/devices/interval-uuid'
-        .set 'Authorization', "Basic #{userAuth}"
-        .reply 201
+        @deleteDevice = @meshblu
+          .delete '/devices/some-interval-uuid'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 201
 
-      options =
-        uri: '/nodes/node-uuid/intervals/interval-uuid'
-        baseUrl: "http://localhost:#{@serverPort}"
-        auth:
-          username: 'some-uuid'
-          password: 'some-token'
-        json:
-          nodeId: 'node-uuid'
+        options =
+          uri: '/nodes/node-uuid/intervals/some-interval-uuid'
+          baseUrl: "http://localhost:#{@serverPort}"
+          auth:
+            username: 'some-uuid'
+            password: 'some-token'
+          json:
+            nodeId: 'node-uuid'
 
-      request.delete options, (error, @response, @body) =>
-        done error
+        request.delete options, (error, @response, @body) =>
+          done error
 
-    it 'should return a 200', ->
-      expect(@response.statusCode).to.equal 200
+      it 'should return a 200', ->
+        expect(@response.statusCode).to.equal 200
 
-    it 'should auth handler', ->
-      @authDevice.done()
+      it 'should auth handler', ->
+        @authDevice.done()
 
-    it 'should delete the device', ->
-      @deleteDevice.done()
+      it 'should delete the device', ->
+        @deleteDevice.done()
 
-    it 'should remove the mongodb entry', (done) ->
-      @datastore.findOne 'metadata.uuid': 'interval-uuid', (error, record) =>
-        return done error if error?
-        expect(record).not.to.exist
-        done()
+      it 'should remove the mongodb entry', (done) ->
+        @datastore.findOne 'metadata.intervalUuid': 'some-interval-uuid', (error, record) =>
+          return done error if error?
+          expect(record).not.to.exist
+          done()
+
+    describe 'when the two devices with the same intervalUuid exists', ->
+      beforeEach (done) ->
+        data =
+          metadata:
+            ownerUuid: 'some-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+            credentialsOnly: true
+        @datastore.insert data, done
+
+      beforeEach (done) ->
+        data =
+          metadata:
+            ownerUuid: 'some-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+            credentialsOnly: false
+        @datastore.insert data, done
+
+      beforeEach (done) ->
+        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+
+        @authDevice = @meshblu
+          .post '/authenticate'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 200, uuid: 'some-uuid', token: 'some-token'
+
+        @deleteDevice = @meshblu
+          .delete '/devices/some-interval-uuid'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 201
+
+        options =
+          uri: '/nodes/node-uuid/intervals/some-interval-uuid'
+          baseUrl: "http://localhost:#{@serverPort}"
+          auth:
+            username: 'some-uuid'
+            password: 'some-token'
+          json:
+            nodeId: 'node-uuid'
+
+        request.delete options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 200', ->
+        expect(@response.statusCode).to.equal 200
+
+      it 'should auth handler', ->
+        @authDevice.done()
+
+      it 'should delete the device', ->
+        @deleteDevice.done()
+
+      it 'should have zero records with that intervalUuid', (done) ->
+        @datastore.count 'metadata.intervalUuid': 'some-interval-uuid', (error, count) =>
+          return done error if error?
+          expect(count).to.equal 0
+          done()
+
+    describe 'when the three devices with the same intervalUuid exists', ->
+      beforeEach (done) ->
+        data =
+          uuid: 'hi'
+          metadata:
+            ownerUuid: 'some-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+            credentialsOnly: true
+        @datastore.insert data, done
+
+      beforeEach (done) ->
+        data =
+          uuid: 'hello'
+          metadata:
+            ownerUuid: 'some-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+            credentialsOnly: false
+        @datastore.insert data, done
+
+      beforeEach (done) ->
+        data =
+          uuid: 'yay'
+          metadata:
+            ownerUuid: 'some-uuid'
+            intervalUuid: 'some-interval-uuid'
+            nodeId   : 'node-uuid'
+            credentialsOnly: false
+        @datastore.insert data, done
+
+      beforeEach (done) ->
+        userAuth = new Buffer('some-uuid:some-token').toString 'base64'
+
+        @authDevice = @meshblu
+          .post '/authenticate'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 200, uuid: 'some-uuid', token: 'some-token'
+
+        @deleteDevice = @meshblu
+          .delete '/devices/some-interval-uuid'
+          .set 'Authorization', "Basic #{userAuth}"
+          .reply 201
+
+        options =
+          uri: '/nodes/node-uuid/intervals/some-interval-uuid'
+          baseUrl: "http://localhost:#{@serverPort}"
+          auth:
+            username: 'some-uuid'
+            password: 'some-token'
+          json:
+            nodeId: 'node-uuid'
+
+        request.delete options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 200', ->
+        expect(@response.statusCode).to.equal 200
+
+      it 'should auth handler', ->
+        @authDevice.done()
+
+      it 'should delete the device', ->
+        @deleteDevice.done()
+
+      it 'should have zero records with that intervalUuid', (done) ->
+        @datastore.count {'metadata.intervalUuid': 'some-interval-uuid'}, (error, count) =>
+          return done error if error?
+          expect(count).to.equal 0
+          done()

@@ -144,6 +144,7 @@ describe 'Fire Once Register Message', ->
     describe 'with multiple previous instances exists', ->
       beforeEach (done) ->
         record =
+          uuid: 'credentials-uuid'
           metadata:
             ownerUuid   : 'some-flow-uuid'
             nodeId      : 'some-interval-node'
@@ -218,7 +219,7 @@ describe 'Fire Once Register Message', ->
       it 'should auth handler', ->
         @authDevice.done()
 
-      it 'should keep the main record in mongo', (done) ->
+      it 'should keep the credentials record in mongo', (done) ->
         query =
           'metadata.ownerUuid': 'some-flow-uuid'
           'metadata.nodeId'   : 'some-interval-node'
@@ -226,6 +227,7 @@ describe 'Fire Once Register Message', ->
         @datastore.findOne query, {_id: false}, (error, record) =>
           return done error if error?
           expectedRecord =
+            uuid: 'credentials-uuid'
             metadata:
               ownerUuid   : 'some-flow-uuid'
               intervalUuid: 'interval-device-uuid'
@@ -235,7 +237,7 @@ describe 'Fire Once Register Message', ->
               uuid: 'interval-device-uuid'
               token: 'interval-device-token'
               nodeId: 'some-interval-node'
-          expect(record.uuid).to.not.exist
+          expect(record.uuid).to.equal 'credentials-uuid'
           expect(record.metadata).to.deep.equal expectedRecord.metadata
           expect(record.data).to.deep.equal expectedRecord.data
           done()
