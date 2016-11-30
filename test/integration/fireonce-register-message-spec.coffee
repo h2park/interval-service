@@ -10,10 +10,6 @@ describe 'Fire Once Register Message', ->
     @meshblu = shmock 0xd00d
     enableDestroy @meshblu
 
-    @fakeRedisClient = {
-      del: sinon.stub()
-    }
-
     serverOptions =
       port: undefined,
       disableLogging: true
@@ -21,7 +17,6 @@ describe 'Fire Once Register Message', ->
         hostname: 'localhost'
         port: 0xd00d
         protocol: 'http'
-      client: @fakeRedisClient
       publicKey:
         publicKey: null
       mongodbUri: 'interval-service-test'
@@ -65,7 +60,6 @@ describe 'Fire Once Register Message', ->
           .set 'Authorization', "Basic #{userAuth}"
           .reply 200, uuid: 'some-uuid', token: 'some-token'
 
-        @fakeRedisClient.del.yields null
         options =
           uri: '/message'
           baseUrl: "http://localhost:#{@serverPort}"
